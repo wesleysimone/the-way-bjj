@@ -1,0 +1,22 @@
+{
+  "name": "The Way BJJ",
+  "short_name": "The Way",
+  "description": "Escola de Jiu-jitsu brasileiro — agenda, check-in, evolução de faixa e mensalidades.",
+  "lang": "pt-BR",
+  "start_url": "./?origem=app#/app/inicio",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0F13",
+  "theme_color": "#224B66",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Agendar aula", "url": "./#/app/agenda" },
+    { "name": "Check-in", "url": "./#/app/checkin" },
+    { "name": "Mensalidade", "url": "./#/app/pagamentos" }
+  ]
+}
