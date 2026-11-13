@@ -1,7 +1,7 @@
 /* Núcleo do protótipo: rotas, armazenamento, ícones, sugestões do professor,
  * agente de atendimento (simulado) e atualização automática do PWA. */
 (function () {
-  const VERSAO = '0.1.0';
+  const VERSAO = '0.2.0';
 
   // ---------- armazenamento seguro (localStorage pode falhar em aba anônima) ----------
   const store = {
@@ -111,51 +111,145 @@
     if (r.area !== 'site' || !r.sub) window.scrollTo({ top: 0, behavior: 'instant' });
     if (r.area === 'site' && r.sub) requestAnimationFrame(() => { const el = document.getElementById(r.sub); el && el.scrollIntoView({ behavior: 'instant', block: 'start' }); });
     renderFabs();
+    marcarSugeridos();
   }
 
-  // ---------- sugestões do professor (o "botão amarelo") ----------
+  // ---------- Sugestões do professor ----------
+  // Dois jeitos: escrever direto, ou "Marcar na tela" → toca numa parte da tela → o sistema
+  // grava o RASTRO (tela › seção › item + filtros ativos + referência técnica) e ele escreve o pedido.
+  // Tudo é salvo na hora no aparelho (inclusive o rascunho), para não perder nada se a página cair.
+  const sugestoes = () => store.get('sugestoes', []);
   function telaAtual() {
     const r = rota();
     const nomes = { site: 'Site', app: 'App do aluno', admin: 'Painel do professor' };
-    return nomes[r.area] + (r.sub ? ' › ' + r.sub : '');
+    const sec = { inicio: 'Início', agenda: 'Agenda', checkin: 'Check-in', evolucao: 'Evolução', pagamentos: 'Pagamentos', perfil: 'Perfil', hoje: 'Hoje', alunos: 'Alunos', graduacoes: 'Graduações', financeiro: 'Financeiro', experimentais: 'Aulas experimentais', automacoes: 'Agente & automações', grade: 'Grade & unidades' };
+    return nomes[r.area] + (r.sub && r.area !== 'site' ? ' › ' + (sec[r.sub] || r.sub) : '');
   }
+  const limpa = (s, n = 70) => (s || '').replace(/\s+/g, ' ').trim().slice(0, n);
+
+  function rastroDe(el) {
+    const partes = [];
+    const root = $('#root');
+    for (let a = el; a && a !== root && a !== document.body; a = a.parentElement) {
+      let rot = a.dataset && a.dataset.rotulo;
+      if (!rot && a.matches('section')) rot = limpa(($('h2', a) || {}).textContent) || a.id;
+      if (!rot && a.matches('.grade-col')) rot = limpa(($('h4', a) || {}).textContent);
+      if (!rot && a.matches('.panel, .a-card, .card')) { const h = $('h3', a); if (h && h !== el) rot = limpa(h.textContent, 50); }
+      if (!rot && a.matches('.phone')) rot = limpa(($('.app-title', a) || {}).textContent) || 'Tela inicial do app';
+      if (rot && !partes.includes(rot)) partes.unshift(rot);
+    }
+    const proprio = limpa(el.getAttribute('aria-label') || el.getAttribute('alt') || (el.innerText || el.textContent).replace(/\n+/g, ' · ')) || el.tagName.toLowerCase();
+    const filtros = $$('.filter.on, .seg button.on, .day.on', root).map((b) => limpa(b.textContent, 30));
+    // referência técnica para eu (dev) achar o elemento no código
+    const caminho = [];
+    for (let a = el; a && a !== root && caminho.length < 14; a = a.parentElement) {
+      const cls = [...a.classList].filter((c) => c !== 'sug-alvo' && c !== 'sug-marcado').slice(0, 2).map((c) => '.' + c).join('');
+      const idx = a.parentElement ? [...a.parentElement.children].indexOf(a) + 1 : 1;
+      caminho.unshift((a.id ? '#' + a.id : a.tagName.toLowerCase() + cls) + `:nth-child(${idx})`);
+    }
+    return { onde: [...partes, `“${proprio}”`].join(' › '), filtros, seletor: caminho.join(' > '), hash: location.hash || '#/' };
+  }
+
+  function marcarSugeridos() {
+    $$('.sug-marcado').forEach((e) => e.classList.remove('sug-marcado'));
+    sugestoes().forEach((s, i) => {
+      if (!s.alvo || s.alvo.hash !== (location.hash || '#/')) return;
+      try { const el = document.querySelector('#root > ' + s.alvo.seletor); if (el) { el.classList.add('sug-marcado'); el.dataset.sugN = i + 1; } } catch (e) { }
+    });
+  }
+
   function renderFabs() {
     const fab = $('#pb-sug');
     if (fab) {
-      const n = store.get('sugestoes', []).length;
+      const n = sugestoes().length;
       fab.innerHTML = `${ic('bulb', 16)} Sugerir ajuste ${n ? `<span class="n">${n}</span>` : ''}`;
-      fab.onclick = abrirSugestoes;
+      fab.onclick = () => abrirSugestoes(store.get('sug-rascunho', {}).alvo || null);
     }
     Agente.fab();
   }
-  function abrirSugestoes() {
-    const lista = store.get('sugestoes', []);
+
+  function modoMarcar() {
+    document.body.classList.add('marcando');
+    const aviso = document.createElement('div');
+    aviso.className = 'marcar-aviso';
+    aviso.innerHTML = `<span>🎯 <b>Toque na parte da tela</b> que você quer mudar</span><button>Cancelar</button>`;
+    document.body.appendChild(aviso);
+    const caixa = document.createElement('div'); caixa.className = 'marcar-caixa'; document.body.appendChild(caixa);
+    const alvoDe = (t) => t.closest('#root') && (t.closest('button, a, .slot, .class-item, .kpi, tr, li, .filter, .day, img, h1, h2, h3, p, .card, .a-card, .panel, .presenca, .auto-item, .belt') || t);
+    const mover = (e) => {
+      const t = alvoDe(e.target); if (!t) { caixa.style.display = 'none'; return; }
+      const r = t.getBoundingClientRect();
+      Object.assign(caixa.style, { display: 'block', left: r.left - 4 + 'px', top: r.top - 4 + 'px', width: r.width + 8 + 'px', height: r.height + 8 + 'px' });
+    };
+    const sair = () => {
+      document.body.classList.remove('marcando'); aviso.remove(); caixa.remove();
+      document.removeEventListener('pointermove', mover, true); document.removeEventListener('click', clicar, true); document.removeEventListener('keydown', esc_, true);
+    };
+    const clicar = (e) => {
+      if (aviso.contains(e.target)) { e.preventDefault(); sair(); abrirSugestoes(); return; }
+      const t = alvoDe(e.target); if (!t) return;
+      e.preventDefault(); e.stopPropagation();
+      const alvo = rastroDe(t);
+      sair();
+      $$('.sug-alvo').forEach((x) => x.classList.remove('sug-alvo'));
+      t.classList.add('sug-alvo');
+      store.set('sug-rascunho', { ...store.get('sug-rascunho', {}), alvo });
+      abrirSugestoes(alvo);
+    };
+    const esc_ = (e) => { if (e.key === 'Escape') { sair(); abrirSugestoes(); } };
+    document.addEventListener('pointermove', mover, true);
+    document.addEventListener('click', clicar, true);
+    document.addEventListener('keydown', esc_, true);
+  }
+
+  function textoParaEnvio(lista) {
+    return `*Sugestões — protótipo The Way* (${lista.length})\n\n` + lista.map((x, i) =>
+      `*${i + 1}. ${x.tela}*\n` +
+      (x.alvo ? `📍 Onde: ${x.alvo.onde}\n` + (x.alvo.filtros.length ? `🔎 Filtros: ${x.alvo.filtros.join(', ')}\n` : '') : '') +
+      `✏️ Pedido: ${x.texto}\n` +
+      (x.alvo ? `🧭 Ref: ${x.alvo.hash} | ${x.alvo.seletor}\n` : `🧭 Ref: ${x.hash || ''}\n`)
+    ).join('\n');
+  }
+
+  function abrirSugestoes(alvo = null) {
+    const lista = sugestoes();
+    const rasc = store.get('sug-rascunho', {});
     modal(`
       <h3>💡 Sugestões para o protótipo</h3>
-      <p class="a-muted">Escreva o que mudar, acrescentar ou tirar nesta tela. Pode mandar quantas quiser — no fim, envie todas pelo WhatsApp.</p>
-      <label for="sug-txt">Tela: <span style="font-weight:600;color:var(--blue)">${esc(telaAtual())}</span></label>
-      <textarea id="sug-txt" rows="3" placeholder="Ex.: colocar o horário de sábado às 9h, trocar a foto do topo, mostrar preço do infantil…"></textarea>
+      <p class="a-muted" style="margin-top:0">Tudo fica salvo neste aparelho na hora — pode fechar e voltar depois.</p>
+      <button class="btn btn-block marcar-btn" id="sug-marcar">🎯 Marcar na tela o que quer mudar</button>
+      ${alvo ? `<div class="rastro"><small>📍 Local marcado</small><b>${esc(alvo.onde)}</b>${alvo.filtros.length ? `<small>Filtros: ${esc(alvo.filtros.join(', '))}</small>` : ''}<button id="sug-desmarcar">trocar / tirar marcação</button></div>`
+        : `<p class="a-muted" style="font-size:13px;margin:8px 0">Ou escreva direto sobre a tela: <b>${esc(telaAtual())}</b></p>`}
+      <textarea id="sug-txt" rows="3" placeholder="${alvo ? 'O que mudar aqui? Ex.: incluir horário na terça às 7h' : 'Ex.: trocar a foto do topo, mostrar preço do infantil…'}">${esc(rasc.texto || '')}</textarea>
       <button class="btn btn-primary btn-block" id="sug-add">Salvar sugestão</button>
       ${lista.length ? `<div class="a-section-title">Suas sugestões (${lista.length})</div>
-      <ul class="sug-list">${lista.map((s, i) => `<li><div><small>${esc(s.tela)}</small>${esc(s.texto)}</div><button data-del="${i}" aria-label="Apagar">✕</button></li>`).join('')}</ul>
-      <button class="btn btn-ok btn-block" id="sug-send">${ic('whats', 18)} Enviar todas pelo WhatsApp</button>` : ''}
+      <ul class="sug-list">${lista.map((s, i) => `<li><div><small>${i + 1}. ${esc(s.tela)}${s.alvo ? ' · 📍 ' + esc(s.alvo.onde) : ''}</small>${esc(s.texto)}</div><button data-del="${i}" aria-label="Apagar">✕</button></li>`).join('')}</ul>
+      <button class="btn btn-ok btn-block" id="sug-send">${ic('whats', 18)} Enviar todas pelo WhatsApp</button>
+      <div class="a-row" style="gap:8px;margin-top:8px"><button class="btn btn-ghost btn-sm" style="flex:1" id="sug-copy">Copiar texto</button><button class="btn btn-ghost btn-sm" style="flex:1" id="sug-clear">Limpar lista</button></div>` : ''}
       <button class="btn btn-ghost btn-block" data-close style="margin-top:8px">Fechar</button>
     `, (m, fechar) => {
+      const txt = $('#sug-txt', m);
+      txt.oninput = () => store.set('sug-rascunho', { ...store.get('sug-rascunho', {}), texto: txt.value });
+      $('#sug-marcar', m).onclick = () => { fechar(); modoMarcar(); };
+      const dm = $('#sug-desmarcar', m);
+      if (dm) dm.onclick = () => { store.set('sug-rascunho', { texto: txt.value }); $$('.sug-alvo').forEach((x) => x.classList.remove('sug-alvo')); fechar(); modoMarcar(); };
       $('#sug-add', m).onclick = () => {
-        const t = $('#sug-txt', m).value.trim();
-        if (!t) return $('#sug-txt', m).focus();
-        const l = store.get('sugestoes', []); l.push({ tela: telaAtual(), texto: t, em: new Date().toISOString() });
-        store.set('sugestoes', l); fechar(); renderFabs(); toast('Sugestão salva ✓'); abrirSugestoes();
+        const t = txt.value.trim();
+        if (!t) return txt.focus();
+        const l = sugestoes(); l.push({ tela: telaAtual(), hash: location.hash || '#/', alvo, texto: t, em: new Date().toISOString() });
+        store.set('sugestoes', l); store.set('sug-rascunho', {});
+        $$('.sug-alvo').forEach((x) => x.classList.remove('sug-alvo'));
+        fechar(); renderFabs(); marcarSugeridos(); toast('Sugestão salva ✓'); abrirSugestoes();
       };
       $$('[data-del]', m).forEach((b) => b.onclick = () => {
-        const l = store.get('sugestoes', []); l.splice(+b.dataset.del, 1); store.set('sugestoes', l); fechar(); renderFabs(); abrirSugestoes();
+        const l = sugestoes(); l.splice(+b.dataset.del, 1); store.set('sugestoes', l); fechar(); renderFabs(); marcarSugeridos(); abrirSugestoes(alvo);
       });
       const s = $('#sug-send', m);
-      if (s) s.onclick = () => {
-        const l = store.get('sugestoes', []);
-        const txt = '*Sugestões — protótipo The Way*\n\n' + l.map((x, i) => `${i + 1}. [${x.tela}] ${x.texto}`).join('\n');
-        window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank', 'noopener');
-      };
+      if (s) s.onclick = () => window.open('https://wa.me/?text=' + encodeURIComponent(textoParaEnvio(sugestoes())), '_blank', 'noopener');
+      const c = $('#sug-copy', m);
+      if (c) c.onclick = () => { try { navigator.clipboard.writeText(textoParaEnvio(sugestoes())); toast('Texto copiado ✓'); } catch (e) { toast('Não deu para copiar'); } };
+      const cl = $('#sug-clear', m);
+      if (cl) cl.onclick = () => { if (confirm('Apagar todas as sugestões deste aparelho? Faça isso só depois de enviar.')) { store.set('sugestoes', []); fechar(); renderFabs(); marcarSugeridos(); } };
     });
   }
 
@@ -233,7 +327,7 @@
         const l = DB.grade.filter((g) => g.dia === hoje).map((g) => `• ${g.hora} — ${g.turma} (${unidade(g.unidade).nome})`).join('\n');
         return this.bot(`Hoje (${DIAS_LONGO[hoje]}):\n${l || 'sem aulas'}\n\nA grade completa está no site, filtrando por unidade.`, ['Aula experimental', 'Valores']);
       }
-      if (t.includes('valor') || t.includes('preço') || t.includes('preco') || t.includes('plano') || t.includes('quanto')) return this.bot(`Plano mensal: ${brl(250)} com treinos ilimitados na grade.\nInfantil e Família: valores a confirmar.\nPagamento por Pix direto no app, com confirmação automática.`, ['Aula experimental', 'Onde fica?']);
+      if (t.includes('valor') || t.includes('preço') || t.includes('preco') || t.includes('plano') || t.includes('quanto')) return this.bot(`Adulto: ${brl(DB.precos.adulto)}/mês com treinos ilimitados.\nFilho de aluno: ${brl(DB.precos.dependente)}/mês.\nOutros planos (infantil, avulsa): a confirmar.\nPagamento por Pix direto no app, com confirmação automática.`, ['Aula experimental', 'Onde fica?']);
       if (t.includes('onde') || t.includes('endere') || t.includes('local')) return this.bot(DB.unidades.map((u) => `📍 ${u.nome}: ${u.endereco}`).join('\n'), ['Aula experimental', 'Horários']);
       if (t.includes('infantil') || t.includes('criança') || t.includes('filho')) return this.bot('Temos turmas infantis às 19:15 (seg, qua e sex). Trabalhamos disciplina, coordenação e respeito, com graduação infantil. Quer agendar uma aula experimental para a criança?', ['Aula experimental', 'Valores']);
       return this.bot('Entendi! Na versão real, eu (a IA) respondo qualquer dúvida com base nas informações da escola, e passo para o professor quando precisar. Posso ajudar com:', ['Aula experimental', 'Horários', 'Valores', 'Onde fica?']);

@@ -145,6 +145,9 @@ body.standalone .site-header { top: 0; }
 .card { background: var(--ink-3); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
 .card h3 { font-size: 19px; margin-bottom: 6px; }
 .card .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(34,75,102,.5); color: var(--cream); margin-bottom: 14px; }
+.card.unit { display: flex; flex-direction: column; }
+.unit-map { width: calc(100% + 44px); margin: -22px -22px 16px; height: 170px; border: 0; border-radius: var(--radius) var(--radius) 0 0; filter: grayscale(.2) contrast(.95); background: var(--ink-2); }
+.unit-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 14px; flex-wrap: wrap; }
 .card.unit.soon { background: linear-gradient(135deg, var(--blue), var(--blue-800)); border-color: transparent; }
 
 /* grade */
@@ -164,7 +167,7 @@ body.standalone .site-header { top: 0; }
 /* planos */
 .plano { display: flex; flex-direction: column; }
 .plano.destaque { background: var(--cream); color: var(--ink); }
-.plano.destaque .muted { color: #555; }
+.plano.destaque .muted, .plano.destaque .preco small { color: #555; }
 .preco { font-family: var(--display); font-size: 48px; margin: 8px 0; }
 .preco small { font-family: var(--body); font-size: 15px; color: var(--muted); }
 .plano ul { padding: 0; margin: 10px 0 20px; list-style: none; flex: 1; }
@@ -367,6 +370,29 @@ table.t tr:hover td { background: rgba(255,255,255,.02); }
 .fab-sug { background: #1b1300; color: #F6C453; border: 0; border-radius: 999px; padding: 5px 12px; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; animation: nudge 3s ease-in-out 2s 3; }
 .fab-sug .n { background: #F6C453; color: #1b1300; border-radius: 99px; padding: 0 7px; font-size: 12px; }
 @keyframes nudge { 0%, 90%, 100% { transform: none; } 93% { transform: rotate(-4deg) scale(1.06); } 96% { transform: rotate(4deg) scale(1.06); } }
+/* reconhecimento facial */
+.rs-steps { display: flex; gap: 6px; margin: 12px 0; }
+.rs-step { flex: 1; text-align: center; font-size: 12px; font-weight: 700; color: var(--app-muted); background: var(--app-bg); border-radius: 10px; padding: 8px 4px; }
+.rs-step span { display: block; font-size: 16px; }
+.rs-step.on { background: var(--blue); color: #fff; }
+.rs-step.feito { background: #E7F6EE; color: #1d7a4c; }
+.rs-cam { position: relative; aspect-ratio: 4/3; background: #0d141a; border-radius: 16px; overflow: hidden; margin-bottom: 12px; }
+.rs-cam video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.rs-oval { position: absolute; left: 50%; top: 46%; width: 46%; height: 72%; transform: translate(-50%, -50%); border: 3px dashed rgba(255,255,255,.8); border-radius: 50%; box-shadow: 0 0 0 999px rgba(0,0,0,.3); }
+.rs-status { position: absolute; left: 10px; right: 10px; bottom: 10px; background: rgba(0,0,0,.65); color: #fff; font-size: 13px; font-weight: 600; text-align: center; padding: 8px; border-radius: 10px; }
+.ft-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--app-line); }
+.ft-item select { margin: 0; padding: 8px; font-size: 14px; }
+.marcar-btn { background: #FFF4D6; color: #6b4a00; border: 2px dashed #E0A526; }
+.marcar-aviso { position: fixed; top: 0; left: 0; right: 0; z-index: 120; background: #E0A526; color: #1b1300; padding: 12px 16px; display: flex; align-items: center; gap: 12px; justify-content: space-between; font-size: 15px; box-shadow: 0 4px 20px rgba(0,0,0,.4); }
+.marcar-aviso button { background: #1b1300; color: #F6C453; border: 0; border-radius: 99px; padding: 8px 14px; font-weight: 800; }
+.marcar-caixa { position: fixed; z-index: 110; pointer-events: none; border: 3px solid #E0A526; border-radius: 10px; background: rgba(224,165,38,.14); box-shadow: 0 0 0 9999px rgba(0,0,0,.25); display: none; transition: all .08s ease; }
+body.marcando #root { cursor: crosshair; }
+body.marcando #root * { cursor: crosshair !important; }
+.sug-alvo { outline: 3px solid #E0A526 !important; outline-offset: 3px; border-radius: 8px; }
+.sug-marcado { outline: 2px dashed #E0A526 !important; outline-offset: 3px; position: relative; }
+.rastro { background: #FFF8E6; border: 1.5px solid #F3D58A; border-radius: 12px; padding: 10px 12px; margin: 10px 0; font-size: 14px; display: flex; flex-direction: column; gap: 3px; }
+.rastro small { color: #7a5b10; font-weight: 700; font-size: 12px; }
+.rastro button { align-self: flex-start; background: none; border: 0; color: var(--blue); font-weight: 700; padding: 4px 0 0; font-size: 13px; text-decoration: underline; }
 .sug-list { margin: 10px 0; padding: 0; list-style: none; max-height: 220px; overflow-y: auto; }
 .sug-list li { background: var(--app-bg); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 14px; display: flex; gap: 8px; }
 .sug-list li small { color: var(--app-muted); display: block; }

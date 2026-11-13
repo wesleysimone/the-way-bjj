@@ -5,11 +5,11 @@
  * Ao publicar mudanças, aumente VERSION: o navegador detecta o sw.js novo, instala
  * na hora (skipWaiting) e a página recarrega sozinha (ver core.js).
  */
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const CACHE = 'theway-' + VERSION;
 const CORE = [
   './', './index.html', './manifest.webmanifest',
-  './css/styles.css', './js/data.js', './js/core.js', './js/site.js', './js/aluno.js', './js/admin.js',
+  './css/styles.css', './js/data.js', './js/core.js', './js/site.js', './js/aluno.js', './js/admin.js', './js/rosto.js',
   './assets/icons/logo-256.png', './assets/icons/icon-192.png'
 ];
 
@@ -41,8 +41,8 @@ self.addEventListener('fetch', (e) => {
         })
         .catch(() => caches.match(req, { ignoreSearch: true }).then((r) => r || caches.match('./index.html')))
     );
-  } else if (url.hostname.includes('fonts.g')) {
-    // Fontes do Google: cache primeiro (não mudam)
+  } else if (url.hostname.includes('fonts.g') || url.pathname.includes('/@vladmandic/face-api@')) {
+    // Fontes e modelos de reconhecimento facial: cache primeiro (versão fixa, não mudam)
     e.respondWith(
       caches.match(req).then((r) => r || fetch(req).then((res) => {
         const copy = res.clone();

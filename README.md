@@ -30,4 +30,5 @@ Abrir http://localhost:5173
 - [Como funciona (link, PWA, atualizações, sugestões)](documentacao/COMO-FUNCIONA.md)
 - [Agente de IA e automações](documentacao/AGENTE-E-AUTOMACOES.md)
 - [Roteiro do projeto e pendências](documentacao/ROTEIRO.md)
+- [Reconhecimento facial (presença pela foto da turma)](documentacao/RECONHECIMENTO-FACIAL.md)
 - [Mensagem pronta para o professor](documentacao/MENSAGEM-PROFESSOR.md)

@@ -26,7 +26,7 @@ window.Admin = (function () {
     const presentes = store.get('presencas', [1, 2, 5]);
     const lista = DB.alunos.slice(0, 8);
     const ativa = aulas[aulas.length - 1] || DB.grade[4];
-    const receita = DB.alunos.filter((a) => a.status === 'em-dia').length * 250;
+    const receita = DB.alunos.filter((a) => a.status === 'em-dia').length * DB.precos.adulto;
     return `<h1>Bom treino, professor 👊</h1><p class="muted">${DIAS_LONGO[d.getDay()]}, ${d.toLocaleDateString('pt-BR')} · tudo o que precisa num lugar só</p>
       <div class="kpis">
         <div class="kpi"><small>Alunos ativos</small><b>${DB.alunos.length}</b><span class="trend">+3 este mês</span></div>
@@ -41,7 +41,8 @@ window.Admin = (function () {
             <div><p class="muted" style="margin-top:0;font-size:14px">Mostre este QR no tablet/celular. O aluno escaneia e a presença entra sozinha. Ou marque com um toque:</p>
               ${lista.map((a) => `<div class="presenca"><div class="av" style="background:${corAv(a.nome)}">${iniciais(a.nome)}</div><div style="flex:1;min-width:0"><b style="font-size:14px">${esc(a.nome)}</b><div class="muted" style="font-size:12px">${beltDot(a.faixa, a.grau)}</div></div>
                 <button class="toggle ${presentes.includes(a.id) ? 'on' : ''}" data-pres="${a.id}" aria-label="Presença de ${esc(a.nome)}"></button></div>`).join('')}
-              <button class="btn btn-blue btn-sm" style="margin-top:12px" id="foto">${ic('camera', 16)} Enviar foto da turma</button>
+              <button class="btn btn-blue btn-sm" style="margin-top:12px" id="foto">${ic('camera', 16)} Foto da turma → presença automática</button>
+              <p class="muted" style="font-size:12px;margin:8px 0 0">Reconhecimento facial: quem aparece na foto ganha presença. ${Rosto.cadastrados().length} rosto(s) cadastrado(s).</p>
             </div></div></div>
         <div>
           <div class="panel"><h3>${ic('cal', 18)} Aulas de hoje</h3>${aulas.map((g) => `<div class="presenca"><b style="min-width:52px">${g.hora}</b><div style="flex:1"><b style="font-size:14px">${esc(g.turma)}</b><div class="muted" style="font-size:12px">${esc(unidade(g.unidade).nome)}</div></div><span class="chip">${(g.hora.charCodeAt(1) % 9) + 4} agendados</span></div>`).join('') || '<p class="muted">Sem aulas hoje.</p>'}</div>
@@ -93,15 +94,16 @@ window.Admin = (function () {
   }
 
   function financeiro() {
-    const meses = [['Jun', 3250], ['Jul', 3500], ['Ago', 3250], ['Set', 3750], ['Out', 3500], ['Nov', 3250]];
+    const V = DB.precos.adulto;
+    const meses = [['Jun', 1950], ['Jul', 2100], ['Ago', 1950], ['Set', 2250], ['Out', 2100], ['Nov', 1950]];
     const max = Math.max(...meses.map((m) => m[1]));
     const atras = DB.alunos.filter((a) => a.status === 'atrasado');
-    return `<h1>Financeiro</h1><p class="muted">Pix com baixa automática — sem conferir extrato</p>
-      <div class="kpis"><div class="kpi"><small>Previsto no mês</small><b>${brl(DB.alunos.length * 250).replace(',00', '')}</b></div><div class="kpi"><small>Recebido</small><b>${brl((DB.alunos.length - atras.length - 1) * 250).replace(',00', '')}</b></div><div class="kpi"><small>Em atraso</small><b style="color:#ff7a7a">${brl(atras.length * 250).replace(',00', '')}</b></div></div>
+    return `<h1>Financeiro</h1><p class="muted">Pix com baixa automática — sem conferir extrato · Adulto ${brl(V)} · Filho de aluno ${brl(DB.precos.dependente)} · outras formas de pagamento: a definir</p>
+      <div class="kpis"><div class="kpi"><small>Previsto no mês</small><b>${brl(DB.alunos.length * V).replace(',00', '')}</b></div><div class="kpi"><small>Recebido</small><b>${brl((DB.alunos.length - atras.length - 1) * V).replace(',00', '')}</b></div><div class="kpi"><small>Em atraso</small><b style="color:#ff7a7a">${brl(atras.length * V).replace(',00', '')}</b></div></div>
       <div class="cols"><div class="panel"><h3>${ic('chart', 18)} Recebimentos (6 meses)</h3><div class="bars" style="margin-bottom:26px">${meses.map(([m, v]) => `<div style="height:${v / max * 100}%" title="${brl(v)}"><span>${m}</span></div>`).join('')}</div></div>
-      <div class="panel"><h3>${ic('wallet', 18)} Em atraso</h3>${atras.map((a) => `<div class="presenca"><div class="av" style="background:${corAv(a.nome)}">${iniciais(a.nome)}</div><div style="flex:1"><b style="font-size:14px">${esc(a.nome)}</b><div class="muted" style="font-size:12px">Nov/2026 · ${brl(250)} · lembrete enviado pelo agente</div></div><button class="btn btn-ghost btn-sm" data-cobrar="${esc(a.nome)}">Reenviar Pix</button></div>`).join('')}</div></div>
+      <div class="panel"><h3>${ic('wallet', 18)} Em atraso</h3>${atras.map((a) => `<div class="presenca"><div class="av" style="background:${corAv(a.nome)}">${iniciais(a.nome)}</div><div style="flex:1"><b style="font-size:14px">${esc(a.nome)}</b><div class="muted" style="font-size:12px">Nov/2026 · ${brl(DB.precos.adulto)} · lembrete enviado pelo agente</div></div><button class="btn btn-ghost btn-sm" data-cobrar="${esc(a.nome)}">Reenviar Pix</button></div>`).join('')}</div></div>
       <div class="panel"><h3>${ic('check', 18)} Últimos pagamentos</h3><div class="table-wrap"><table class="t"><thead><tr><th>Aluno</th><th>Referência</th><th>Valor</th><th>Pago em</th><th>Como</th></tr></thead><tbody>
-        ${DB.alunos.filter((a) => a.status === 'em-dia').slice(0, 6).map((a, i) => `<tr><td>${esc(a.nome)}</td><td>Nov/2026</td><td>${brl(250)}</td><td>${String(10 - (i % 4)).padStart(2, '0')}/11/2026</td><td><span class="chip ok">Pix · automático</span></td></tr>`).join('')}
+        ${DB.alunos.filter((a) => a.status === 'em-dia').slice(0, 6).map((a, i) => `<tr><td>${esc(a.nome)}</td><td>Nov/2026</td><td>${brl(DB.precos.adulto)}</td><td>${String(10 - (i % 4)).padStart(2, '0')}/11/2026</td><td><span class="chip ok">Pix · automático</span></td></tr>`).join('')}
       </tbody></table></div></div>`;
   }
 
@@ -121,7 +123,7 @@ window.Admin = (function () {
       <div><div class="panel"><h3>${ic('chat', 18)} Exemplo de conversa no WhatsApp</h3>
         <div style="background:#ECE5DD;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px">
           <div class="msg me">Oi, quanto custa o jiu-jitsu? Nunca treinei</div>
-          <div class="msg bot">Oss! 🥋 O plano mensal é R$ 250 com treinos ilimitados. E a primeira aula é grátis! Quer agendar? Tenho hoje 19:15 (iniciante) na Gladius ou amanhã 06:00 na Hammer.</div>
+          <div class="msg bot">Oss! 🥋 O plano adulto é R$ 150 por mês, com treinos ilimitados (filho de aluno: R$ 100). E a primeira aula é grátis! Quer agendar? Tenho hoje 19:15 (iniciante) na Gladius ou amanhã 06:00 na Hammer.</div>
           <div class="msg me">Hoje 19:15</div>
           <div class="msg bot">✅ Agendado! Te mando o endereço e um lembrete às 17:15. Leve bermuda e camiseta. Até mais tarde!</div>
         </div><p class="muted" style="font-size:13px">Se a pergunta fugir do que ele sabe, o agente avisa o professor e passa a conversa.</p></div>
@@ -152,7 +154,14 @@ window.Admin = (function () {
       l = l.includes(id) ? l.filter((x) => x !== id) : [...l, id]; store.set('presencas', l); b.classList.toggle('on');
       toast(b.classList.contains('on') ? 'Presença marcada ✓' : 'Presença removida');
     });
-    const f = $('#foto', root); if (f) f.onclick = () => toast('📸 Na versão real: abre a câmera, a foto vai para a galeria e para quem treinou');
+    const f = $('#foto', root); if (f) f.onclick = () => Rosto.fotoDaTurma((nomes) => {
+      let l = store.get('presencas', [1, 2, 5]);
+      nomes.forEach((n) => {
+        const a = DB.alunos.find((x) => x.nome === n); if (a && !l.includes(a.id)) l.push(a.id);
+        if (n === DB.eu.nome && store.get('checkinHoje', null) !== new Date().toDateString()) { store.set('checkinHoje', new Date().toDateString()); store.set('aulasExtras', store.get('aulasExtras', 0) + 1); }
+      });
+      store.set('presencas', l); App.render();
+    });
     $$('[data-grad]', root).forEach((b) => b.onclick = () => { const a = DB.alunos.find((x) => x.id === +b.dataset.grad); a.grau = Math.min(4, a.grau + 1); a.aulas = 0; toast(`🎉 ${a.nome.split(' ')[0]} graduado! Mensagem de parabéns enviada.`); App.render(); });
     $$('[data-cobrar]', root).forEach((b) => b.onclick = () => toast(`Pix reenviado para ${b.dataset.cobrar.split(' ')[0]} pelo WhatsApp`));
     $$('[data-auto]', root).forEach((b) => b.onclick = () => { const v = !b.classList.contains('on'); store.set('auto:' + b.dataset.auto, v); b.classList.toggle('on', v); toast(v ? 'Automação ligada' : 'Automação desligada'); });

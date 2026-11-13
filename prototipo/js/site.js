@@ -64,13 +64,19 @@ window.Site = (function () {
     <section class="section alt" id="unidades"><div class="wrap">
       <div class="section-head"><div><div class="eyebrow">Onde treinar</div><h2>Unidades</h2></div></div>
       <div class="cards">${u.map((x) => `
-        <div class="card unit ${x.status === 'em-breve' ? 'soon' : ''}">
-          <div class="ico">${ic(x.status === 'em-breve' ? 'star' : 'pin')}</div>
+        <div class="card unit ${x.status === 'em-breve' ? 'soon' : ''}" data-rotulo="Unidade ${esc(x.nome)}">
+          ${x.mapa ? `<iframe class="unit-map" loading="lazy" title="Mapa ${esc(x.nome)}" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=${encodeURIComponent(x.mapa)}&output=embed"></iframe>`
+            : `<div class="ico">${ic('star')}</div>`}
           <h3>${esc(x.nome)}</h3>
           <p class="muted" style="margin:0 0 10px">${esc(x.endereco)}</p>
           ${x.status === 'em-breve' ? '<span class="chip warn">Em construção</span>' : `<span class="chip blue">${esc(x.insta)}</span>`}
           ${x.nota ? `<p class="muted" style="font-size:12px;margin:10px 0 0">${esc(x.nota)} · confirmar unidade</p>` : ''}
+          ${x.mapa ? `<div class="unit-actions">
+            <a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(x.mapa)}">${ic('arrow', 16)} Como chegar</a>
+            <a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="https://waze.com/ul?q=${encodeURIComponent(x.mapa)}&navigate=yes">Waze</a>
+          </div>` : ''}
         </div>`).join('')}</div>
+      <p class="muted" style="font-size:13px;margin-top:14px">“Como chegar” abre o Google Maps (app ou site) já com a rota até a unidade — é só tocar em <b>Iniciar</b>.</p>
     </div></section>
 
     <section class="section" id="grade"><div class="wrap">

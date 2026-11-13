@@ -8,15 +8,33 @@ O protótipo fica publicado no **GitHub Pages**, que é grátis:
 
 - O link **não expira**: fica no ar 24h, 7 dias, quanto tempo for preciso. Para tirar do ar é só desligar o Pages (veja abaixo).
 - Funciona no celular e no computador, sem login.
+- **O professor NÃO precisa baixar nem instalar nada.** É só tocar no link, que abre no navegador do celular. Instalar (“Adicionar à tela inicial”) é opcional, só se ele quiser ver como fica o ícone de app.
 - No topo há uma **barra amarela** que troca entre as 3 visões: **Site**, **App do aluno** e **Painel do professor**.
 - O site está marcado como `noindex`, então não aparece no Google enquanto for protótipo.
 
-### Como o professor dá ideias
+### Como o professor dá ideias (botão “💡 Sugerir ajuste”)
 
-1. Na barra amarela, ele toca em **“💡 Sugerir ajuste”**.
-2. Escreve a ideia. O sistema já anota em qual tela ele estava.
-3. Pode salvar várias sugestões, que ficam guardadas no celular dele.
-4. No fim, toca em **“Enviar todas pelo WhatsApp”**. Abre o WhatsApp com a lista pronta, e ele escolhe o seu contato e envia.
+**Jeito 1: escrever direto.** Ele toca no botão, escreve e salva. O sistema anota em qual tela ele estava.
+
+**Jeito 2: marcar na tela** (o mais útil):
+1. Ele toca em **“🎯 Marcar na tela o que quer mudar”**.
+2. A tela fica em modo de seleção, com uma barra amarela no topo. Ele toca no ponto que quer mudar, por exemplo um horário da **terça na Hammer BSB**.
+3. O sistema grava o **rastro**: tela › seção › item tocado › filtros ativos. Exemplo: *Horários › Terça › “06:00 · No-Gi · Hammer BSB” (Filtros: Hammer BSB)*.
+4. Ele escreve o pedido (“incluir horário na terça às 7h”) e salva. O item fica com **contorno tracejado amarelo**, para ele ver o que já anotou.
+
+**Nada se perde:** cada sugestão e até o **rascunho** que ele está digitando ficam salvos na hora, no celular dele. Se a página fechar, é só abrir de novo.
+
+**Enviar:** “Enviar todas pelo WhatsApp” abre o WhatsApp com tudo **formatado**, para você me repassar e eu aplicar:
+
+```
+*1. Site*
+📍 Onde: Horários › Terça › “06:00 · No-Gi · Hammer BSB”
+🔎 Filtros: Hammer BSB, Todos
+✏️ Pedido: Incluir horário na terça às 7h
+🧭 Ref: #/site/grade | #grade… > div.slot…   ← referência técnica para eu achar no código
+```
+
+Também tem **“Copiar texto”** (para mandar por outro meio) e **“Limpar lista”** (para usar depois de enviar).
 
 > No sistema final, as sugestões e mensagens vão direto para o banco de dados, sem passar pelo WhatsApp.
 

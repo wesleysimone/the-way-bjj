@@ -12,9 +12,10 @@ window.DB = {
   },
 
   unidades: [
-    { id: 'hammer', nome: 'Hammer BSB', insta: '@hammerbsb', endereco: 'Endereço a confirmar', status: 'ativa' },
-    { id: 'gladius', nome: 'Gladius Fight Club', insta: '@gladiusfightclub', endereco: 'Endereço a confirmar', status: 'ativa' },
-    { id: 'vp', nome: 'Vicente Pires', insta: '@thewaybjj', endereco: 'St. Hab. Vicente Pires, Módulo 27, 2º andar — Taguatinga/DF', status: 'ativa', nota: 'Endereço que está no Linktree' },
+    // "mapa" = texto que o Google Maps procura. Enquanto o endereço não é confirmado, procura pelo nome do local.
+    { id: 'hammer', nome: 'Hammer BSB', insta: '@hammerbsb', endereco: 'Endereço a confirmar', mapa: 'Hammer BSB, Brasília - DF', status: 'ativa' },
+    { id: 'gladius', nome: 'Gladius Fight Club', insta: '@gladiusfightclub', endereco: 'Endereço a confirmar', mapa: 'Gladius Fight Club, Brasília - DF', status: 'ativa' },
+    { id: 'vp', nome: 'Vicente Pires', insta: '@thewaybjj', endereco: 'St. Hab. Vicente Pires, Módulo 27, 2º andar — Taguatinga/DF', mapa: 'Setor Habitacional Vicente Pires Módulo 27, Taguatinga, Brasília - DF', status: 'ativa', nota: 'Endereço que está no Linktree' },
     { id: 'samambaia', nome: 'THE WAY Samambaia', insta: '@thewaybjj', endereco: 'Sede própria — em construção', status: 'em-breve' }
   ],
 
@@ -46,10 +47,12 @@ window.DB = {
   ],
 
   planos: [
-    { id: 'mensal', nome: 'Mensal', preco: 250, periodo: '/mês', itens: ['Treinos ilimitados na grade', 'App com agenda, check-in e evolução', 'Pix com baixa automática'], destaque: true },
-    { id: 'infantil', nome: 'Infantil', preco: null, periodo: '/mês', itens: ['Turmas por idade', 'Acompanhamento do responsável no app', 'Graduação infantil (cinza → verde)'] },
-    { id: 'familia', nome: 'Família', preco: null, periodo: '/mês', itens: ['Pais e filhos no mesmo plano', 'Uma conta do responsável', 'Desconto por dependente'] }
+    { id: 'adulto', nome: 'Adulto', preco: 150, periodo: '/mês', itens: ['Treinos ilimitados na grade', 'App com agenda, check-in e evolução', 'Pix com baixa automática'], destaque: true },
+    { id: 'dependente', nome: 'Filho de aluno', preco: 100, periodo: '/mês por filho', itens: ['Valor especial para filhos de aluno', 'Uma mensalidade só para a família', 'Pais acompanham tudo no app'] },
+    { id: 'outros', nome: 'Infantil e outros', preco: null, periodo: '/mês', itens: ['Infantil sem responsável matriculado', 'Aula avulsa / diária', 'Valores a confirmar com o professor'] }
   ],
+  // Valores informados: adulto R$ 150 e filho R$ 100 (regra do desconto a confirmar). Outras formas de pagamento: a definir.
+  precos: { adulto: 150, dependente: 100 },
 
   professores: [
     { nome: 'Professor responsável', faixa: 'preta', texto: 'Nome, graduação, linhagem e títulos — a preencher com o professor.' },
@@ -95,7 +98,8 @@ window.DB = {
     faixa: 'branca', grau: 1, aulasNoGrau: 22,
     unidade: 'hammer',
     desde: '2026-03-17',
-    dependentes: [{ nome: 'Filho(a) Demonstração', faixa: 'cinza', grau: 2 }]
+    dependentes: [{ nome: 'Filho(a) Demonstração', faixa: 'cinza', grau: 2 }],
+    composicao: [['Você — plano Adulto', 150], ['Filho(a) Demonstração — filho de aluno', 100]]
   },
 
   historicoGraduacoes: [

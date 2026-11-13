@@ -65,6 +65,8 @@ window.Aluno = (function () {
       ${prox ? `<div class="class-item"><div class="hora">${prox.hora}</div><div class="info"><b>${esc(prox.turma)}</b><small>${prox.diaTxt} · ${esc(unidade(prox.unidade).nome)}</small></div><span class="chip ok" style="background:#E7F6EE;color:#1d7a4c">Agendada</span></div>`
         : `<div class="a-card a-row"><div style="flex:1"><b>Nenhuma aula agendada</b><div class="a-muted">Agende e mantenha a sequência 🔥</div></div><button class="btn-agendar" data-go="agenda">Agendar</button></div>`}
 
+      ${Rosto.cadastrados().includes(e.nome) ? '' : `<div class="a-card a-row" style="background:#FFF8E6"><div style="flex:1"><b>📸 Presença pela foto da turma</b><div class="a-muted">Cadastre seu rosto uma vez e esqueça o check-in.</div></div><button class="btn-agendar" data-go="perfil">Cadastrar</button></div>`}
+
       <div class="a-section-title">Avisos do professor</div>
       <div class="a-card"><div class="a-row" style="align-items:flex-start"><div class="av" style="background:var(--blue)">${ic('bell', 18)}</div>
         <div><b>Seminário de raspagens — sábado</b><div class="a-muted">Open mat especial às 10h. Traga um parceiro!</div></div></div>
@@ -150,10 +152,11 @@ window.Aluno = (function () {
     const pg = pagos();
     const lista = DB.pagamentos.map((p) => ({ ...p, pago: p.pago || (pg.includes(p.ref) ? new Date().toISOString().slice(0, 10) : null), via: p.via || (pg.includes(p.ref) ? 'Pix (automático)' : null) }));
     const aberto = lista.filter((p) => !p.pago);
-    return `${topo('Mensalidades', 'Plano Mensal · ' + brl(250))}<div class="app-body">
+    return `${topo('Mensalidades', 'Adulto ' + brl(150) + ' + filho ' + brl(100))}<div class="app-body">
       ${aberto.length ? aberto.slice(0, 1).map((p) => { const late = new Date(p.venc) < new Date(); return `
         <div class="a-card pay-due ${late ? 'late' : ''}"><div class="a-row" style="justify-content:space-between"><b>${p.ref}</b>${late ? '<span class="chip danger" style="background:#FDE3E3;color:#B42323">Em atraso</span>' : '<span class="chip blue" style="background:#E3EEF6;color:var(--blue)">Em aberto</span>'}</div>
           <div style="font-size:34px;font-weight:800;margin:6px 0">${brl(p.valor)}</div><div class="a-muted">Vencimento ${dataBR(p.venc)}</div>
+          <div style="margin-top:10px">${DB.eu.composicao.map(([n, v]) => `<div class="pay-row" style="padding:6px 0"><span>${esc(n)}</span><span>${brl(v)}</span></div>`).join('')}</div>
           <button class="btn btn-primary btn-block" style="margin-top:14px;background:var(--blue);color:#fff" data-pagar="${p.ref}">${ic('qr', 20)} Pagar com Pix</button>
           <p class="a-muted" style="font-size:12px;margin:10px 0 0;text-align:center">Confirmação automática — não precisa mandar comprovante.</p></div>`; }).join('')
         : `<div class="a-card check-ok" style="padding:20px"><div class="big" style="width:70px;height:70px">${ic('check', 40)}</div><b>Tudo em dia! 🙌</b></div>`}
@@ -163,12 +166,22 @@ window.Aluno = (function () {
     </div>`;
   }
 
+  function cardRosto(nome, titulo) {
+    const n = (Rosto.base()[nome] || []).length;
+    return n ? `<div class="a-card a-row"><div class="av" style="background:var(--ok)">${ic('check', 18)}</div><div style="flex:1"><b>${titulo} está cadastrado</b><div class="a-muted">${n} foto(s) · a foto da turma marca sua presença</div></div><button class="btn-agendar" style="background:#FDE3E3;color:#B42323" data-rosto-del="${esc(nome)}">Apagar</button></div>`
+      : `<div class="a-card"><div class="a-row" style="align-items:flex-start"><div class="av" style="background:var(--blue)">${ic('camera', 18)}</div><div style="flex:1"><b>Presença pela foto da turma</b><div class="a-muted">Cadastre seu rosto (frente e lados). No fim da aula, a foto do professor marca sua presença sozinha.</div></div></div>
+        <button class="btn btn-primary btn-block btn-sm" style="margin-top:12px;background:var(--blue);color:#fff" data-rosto="${esc(nome)}">${ic('camera', 16)} Cadastrar meu rosto</button></div>`;
+  }
+
   function perfil() {
     const e = eu();
     return `${topo('Perfil')}<div class="app-body">
       <div class="a-card a-row"><div class="av" style="width:60px;height:60px;background:var(--blue);font-size:20px">AD</div><div><b>${esc(e.nome)}</b><div class="a-muted">Aluno desde ${dataBR(e.desde)} · ${esc(unidade(e.unidade).nome)}</div></div></div>
+      <div class="a-section-title">Reconhecimento facial</div>
+      ${cardRosto(e.nome, 'Seu rosto')}
       <div class="a-section-title">Dependentes</div>
-      <div class="a-card">${e.dependentes.map((d) => `<div class="a-row"><div class="av" style="background:#E0A526;color:#111">${iniciais(d.nome)}</div><div style="flex:1"><b>${esc(d.nome)}</b><div style="margin-top:6px;max-width:160px">${belt(d.faixa, d.grau, 14)}</div></div></div>`).join('')}
+      <div class="a-card">${e.dependentes.map((d) => `<div class="a-row"><div class="av" style="background:#E0A526;color:#111">${iniciais(d.nome)}</div><div style="flex:1"><b>${esc(d.nome)}</b><div style="margin-top:6px;max-width:160px">${belt(d.faixa, d.grau, 14)}</div></div>
+        <button class="btn-agendar ${Rosto.cadastrados().includes(d.nome) ? 'ok' : ''}" data-rosto="${esc(d.nome)}">${Rosto.cadastrados().includes(d.nome) ? '✓ Rosto' : ic('camera', 16)}</button></div>`).join('')}
         <p class="a-muted" style="font-size:13px;margin:12px 0 0">Pais acompanham presença, graduação e mensalidade dos filhos na mesma conta.</p></div>
       <div class="a-section-title">Notificações</div>
       <div class="a-card">${[['Lembrete de aula (2h antes)', true], ['Vencimento da mensalidade', true], ['Avisos do professor', true], ['Ranking semanal', false]].map(([n, on], i) => `<div class="pay-row"><span>${n}</span><button class="toggle ${store.get('notif' + i, on) ? 'on' : ''}" data-notif="${i}" aria-label="${n}"></button></div>`).join('')}</div>
@@ -233,6 +246,8 @@ window.Aluno = (function () {
     if (sim) sim.onclick = () => { sim.disabled = true; sim.textContent = 'Lendo QR…'; setTimeout(() => { store.set('checkinHoje', new Date().toDateString()); store.set('aulasExtras', store.get('aulasExtras', 0) + 1); App.render(); }, 1100); };
     $$('[data-pagar]', root).forEach((b) => b.onclick = () => pixModal(b.dataset.pagar));
     const inst = $('#btn-inst', root); if (inst) inst.onclick = App.instalar;
+    $$('[data-rosto]', root).forEach((b) => b.onclick = () => Rosto.cadastrar(b.dataset.rosto, App.render));
+    $$('[data-rosto-del]', root).forEach((b) => b.onclick = () => { if (confirm('Apagar o cadastro do rosto?')) { Rosto.apagar(b.dataset.rostoDel); App.render(); toast('Cadastro do rosto apagado'); } });
     $$('[data-notif]', root).forEach((b) => b.onclick = () => { const k = 'notif' + b.dataset.notif; const v = !b.classList.contains('on'); store.set(k, v); b.classList.toggle('on', v); });
     const rs = $('#reset', root); if (rs) rs.onclick = () => { ['agendados', 'pagos', 'checkinHoje', 'aulasExtras'].forEach((k) => store.set(k, k === 'aulasExtras' ? 0 : k === 'checkinHoje' ? null : [])); toast('Demonstração zerada'); location.hash = '#/app/inicio'; };
   }
