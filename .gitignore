@@ -8,3 +8,6 @@ Fotos app/
 node_modules/
 .DS_Store
 Thumbs.db
+
+# Fotos reais usadas só em teste local
+prototipo/_teste/

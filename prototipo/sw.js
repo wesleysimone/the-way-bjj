@@ -5,7 +5,7 @@
  * Ao publicar mudanças, aumente VERSION: o navegador detecta o sw.js novo, instala
  * na hora (skipWaiting) e a página recarrega sozinha (ver core.js).
  */
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 const CACHE = 'theway-' + VERSION;
 const CORE = [
   './', './index.html', './manifest.webmanifest',
@@ -20,13 +20,26 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== 'theway-compartilhada').map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;
+  // Foto compartilhada do WhatsApp/galeria → app (Android, app instalado): guarda e abre o painel
+  if (req.method === 'POST' && new URL(req.url).pathname.endsWith('/compartilhar-foto')) {
+    e.respondWith((async () => {
+      const dados = await req.formData();
+      const foto = dados.get('foto');
+      if (foto) {
+        const c = await caches.open('theway-compartilhada');
+        await c.put('./_foto-compartilhada', new Response(foto, { headers: { 'Content-Type': foto.type || 'image/jpeg' } }));
+      }
+      return Response.redirect('./?foto=compartilhada#/admin/hoje', 303);
+    })());
+    return;
+  }
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;

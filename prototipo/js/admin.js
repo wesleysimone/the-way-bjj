@@ -24,7 +24,7 @@ window.Admin = (function () {
     const d = new Date(); const dow = d.getDay() || 1;
     const aulas = DB.grade.filter((g) => g.dia === dow);
     const presentes = store.get('presencas', [1, 2, 5]);
-    const lista = DB.alunos.slice(0, 8);
+    const lista = DB.alunos.filter((a) => AGENDADOS.includes(a.id) || presentes.includes(a.id));
     const ativa = aulas[aulas.length - 1] || DB.grade[4];
     const receita = DB.alunos.filter((a) => a.status === 'em-dia').length * DB.precos.adulto;
     return `<h1>Bom treino, professor 👊</h1><p class="muted">${DIAS_LONGO[d.getDay()]}, ${d.toLocaleDateString('pt-BR')} · tudo o que precisa num lugar só</p>
@@ -39,7 +39,7 @@ window.Admin = (function () {
           <div class="qr-aula">
             <div style="background:#fff;padding:10px;border-radius:12px;width:150px"><svg viewBox="0 0 21 21" width="130" height="130" shape-rendering="crispEdges">${qr(Date.now() / 30000 | 0)}</svg><div style="color:#111;font-size:11px;text-align:center;font-weight:700">muda a cada aula</div></div>
             <div><p class="muted" style="margin-top:0;font-size:14px">Mostre este QR no tablet/celular. O aluno escaneia e a presença entra sozinha. Ou marque com um toque:</p>
-              ${lista.map((a) => `<div class="presenca"><div class="av" style="background:${corAv(a.nome)}">${iniciais(a.nome)}</div><div style="flex:1;min-width:0"><b style="font-size:14px">${esc(a.nome)}</b><div class="muted" style="font-size:12px">${beltDot(a.faixa, a.grau)}</div></div>
+              ${lista.map((a) => `<div class="presenca"><div class="av" style="background:${corAv(a.nome)}">${iniciais(a.nome)}</div><div style="flex:1;min-width:0"><b style="font-size:14px">${esc(a.nome)}</b><div class="muted" style="font-size:12px">${beltDot(a.faixa, a.grau)}${AGENDADOS.includes(a.id) ? "" : " · <b style=\"color:#f0bd52\">veio sem agendar</b>"}</div></div>
                 <button class="toggle ${presentes.includes(a.id) ? 'on' : ''}" data-pres="${a.id}" aria-label="Presença de ${esc(a.nome)}"></button></div>`).join('')}
               <button class="btn btn-blue btn-sm" style="margin-top:12px" id="foto">${ic('camera', 16)} Foto da turma → presença automática</button>
               <p class="muted" style="font-size:12px;margin:8px 0 0">Reconhecimento facial: quem aparece na foto ganha presença. ${Rosto.cadastrados().length} rosto(s) cadastrado(s).</p>
@@ -98,7 +98,10 @@ window.Admin = (function () {
     const meses = [['Jun', 1950], ['Jul', 2100], ['Ago', 1950], ['Set', 2250], ['Out', 2100], ['Nov', 1950]];
     const max = Math.max(...meses.map((m) => m[1]));
     const atras = DB.alunos.filter((a) => a.status === 'atrasado');
-    return `<h1>Financeiro</h1><p class="muted">Pix com baixa automática — sem conferir extrato · Adulto ${brl(V)} · Filho de aluno ${brl(DB.precos.dependente)} · outras formas de pagamento: a definir</p>
+    const mp = store.get('mostrarPrecos', true);
+    return `<h1>Financeiro</h1>
+      <div class="panel" style="display:flex;gap:14px;align-items:center;margin-top:14px"><div style="flex:1"><b>Mostrar valores no site</b><div class="muted" style="font-size:13px">${mp ? 'O site mostra R$ 150 (adulto) e R$ 100 (filho de aluno).' : 'O site mostra “Consulte” e o agente passa os valores na conversa.'}</div></div><button class="toggle ${mp ? 'on' : ''}" id="tg-precos" aria-label="Mostrar valores no site"></button></div>
+      <p class="muted">Pix com baixa automática — sem conferir extrato · Adulto ${brl(V)} · Filho de aluno ${brl(DB.precos.dependente)} · outras formas de pagamento: a definir</p>
       <div class="kpis"><div class="kpi"><small>Previsto no mês</small><b>${brl(DB.alunos.length * V).replace(',00', '')}</b></div><div class="kpi"><small>Recebido</small><b>${brl((DB.alunos.length - atras.length - 1) * V).replace(',00', '')}</b></div><div class="kpi"><small>Em atraso</small><b style="color:#ff7a7a">${brl(atras.length * V).replace(',00', '')}</b></div></div>
       <div class="cols"><div class="panel"><h3>${ic('chart', 18)} Recebimentos (6 meses)</h3><div class="bars" style="margin-bottom:26px">${meses.map(([m, v]) => `<div style="height:${v / max * 100}%" title="${brl(v)}"><span>${m}</span></div>`).join('')}</div></div>
       <div class="panel"><h3>${ic('wallet', 18)} Em atraso</h3>${atras.map((a) => `<div class="presenca"><div class="av" style="background:${corAv(a.nome)}">${iniciais(a.nome)}</div><div style="flex:1"><b style="font-size:14px">${esc(a.nome)}</b><div class="muted" style="font-size:12px">Nov/2026 · ${brl(DB.precos.adulto)} · lembrete enviado pelo agente</div></div><button class="btn btn-ghost btn-sm" data-cobrar="${esc(a.nome)}">Reenviar Pix</button></div>`).join('')}</div></div>
@@ -139,6 +142,23 @@ window.Admin = (function () {
 
   const TELAS = { hoje, alunos, graduacoes, financeiro, experimentais: experimentaisTela, automacoes, grade };
 
+  // Alunos agendados na aula atual (no sistema real vem do banco)
+  const AGENDADOS = [1, 2, 3, 4, 5, 6, 7, 8];
+  function abrirFotoTurma(arquivo) {
+    const agendados = DB.alunos.filter((a) => AGENDADOS.includes(a.id)).map((a) => a.nome);
+    Rosto.fotoDaTurma({
+      arquivo, agendados,
+      aoConfirmar(presentes, faltas, extras) {
+        // a foto é a fonte da verdade: presença = quem estava na foto (+ quem o professor confirmou)
+        store.set('presencas', DB.alunos.filter((a) => presentes.includes(a.nome)).map((a) => a.id));
+        store.set('faltas', faltas);
+        if (presentes.includes(DB.eu.nome) && store.get('checkinHoje', null) !== new Date().toDateString()) { store.set('checkinHoje', new Date().toDateString()); store.set('aulasExtras', store.get('aulasExtras', 0) + 1); }
+        if (location.hash !== '#/admin/hoje') location.hash = '#/admin/hoje'; else App.render();
+        if (faltas.length) setTimeout(() => toast(`🤖 Agente: mensagem “sentimos sua falta” para ${faltas.length} aluno(s) que agendaram e não vieram`, 4000), 4200);
+      }
+    });
+  }
+
   function render(r) {
     const sub = TELAS[r.sub] ? r.sub : 'hoje';
     const nav = MENU.map(([id, icn, nome, cnt]) => { const n = cnt && cnt(); return `<a href="#/admin/${id}" class="${sub === id ? 'on' : ''}">${ic(icn, 18)} ${nome}${n ? `<span class="count">${n}</span>` : ''}</a>`; }).join('');
@@ -154,21 +174,15 @@ window.Admin = (function () {
       l = l.includes(id) ? l.filter((x) => x !== id) : [...l, id]; store.set('presencas', l); b.classList.toggle('on');
       toast(b.classList.contains('on') ? 'Presença marcada ✓' : 'Presença removida');
     });
-    const f = $('#foto', root); if (f) f.onclick = () => Rosto.fotoDaTurma((nomes) => {
-      let l = store.get('presencas', [1, 2, 5]);
-      nomes.forEach((n) => {
-        const a = DB.alunos.find((x) => x.nome === n); if (a && !l.includes(a.id)) l.push(a.id);
-        if (n === DB.eu.nome && store.get('checkinHoje', null) !== new Date().toDateString()) { store.set('checkinHoje', new Date().toDateString()); store.set('aulasExtras', store.get('aulasExtras', 0) + 1); }
-      });
-      store.set('presencas', l); App.render();
-    });
+    const f = $('#foto', root); if (f) f.onclick = () => abrirFotoTurma();
     $$('[data-grad]', root).forEach((b) => b.onclick = () => { const a = DB.alunos.find((x) => x.id === +b.dataset.grad); a.grau = Math.min(4, a.grau + 1); a.aulas = 0; toast(`🎉 ${a.nome.split(' ')[0]} graduado! Mensagem de parabéns enviada.`); App.render(); });
     $$('[data-cobrar]', root).forEach((b) => b.onclick = () => toast(`Pix reenviado para ${b.dataset.cobrar.split(' ')[0]} pelo WhatsApp`));
+    const tp = $('#tg-precos', root); if (tp) tp.onclick = () => { store.set('mostrarPrecos', !store.get('mostrarPrecos', true)); App.render(); toast(store.get('mostrarPrecos', true) ? 'Valores visíveis no site' : 'Valores escondidos no site (Consulte)'); };
     $$('[data-auto]', root).forEach((b) => b.onclick = () => { const v = !b.classList.contains('on'); store.set('auto:' + b.dataset.auto, v); b.classList.toggle('on', v); toast(v ? 'Automação ligada' : 'Automação desligada'); });
     $$('[data-edit]', root).forEach((b) => b.onclick = () => toast('Na versão real: editar horário (muda no site, app e agente na hora)'));
     const n = $('#novo', root); if (n) n.onclick = () => toast('Na versão real: cadastro com convite por WhatsApp para o aluno');
     const bu = $('#busca', root); if (bu) bu.oninput = () => { busca = bu.value; const pos = bu.selectionStart; App.render(); const nb = $('#busca'); nb.focus(); nb.setSelectionRange(pos, pos); };
   }
 
-  return { render, mount };
+  return { render, mount, abrirFotoTurma };
 })();

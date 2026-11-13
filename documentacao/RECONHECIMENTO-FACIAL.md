@@ -12,9 +12,41 @@ O aluno agenda no app → no fim da aula o professor tira **foto da turma** e ma
 
 O QR code e o “marcar com um toque” continuam como alternativa: quando alguém sai da foto, de costas, de lado demais etc.
 
-## O que já funciona no protótipo (v0.2.0)
+## A foto manda, não o agendamento (v0.3.0)
+Muitos alunos **não agendam e vão**, e outros **agendam e não vão**. Por isso a presença vem da **foto**:
+
+| Situação | O que o sistema faz |
+|---|---|
+| Agendou e está na foto | ✅ Presença |
+| **Não agendou** e está na foto | ✅ Presença, com o aviso “veio sem agendar” |
+| Agendou e **não** está na foto | ⚠️ Falta. O professor pode marcar “estava” (saiu da foto). O agente manda “sentimos sua falta”. |
+| Rosto que o sistema não conhece | ❓ O professor escolhe quem é (aluno / **Professor** / **Visitante-experimental**). O sistema aprende o rosto, menos o de visitante. |
+| Professor na foto | Reconhecido como Professor e **não conta presença** |
+
+### Como a foto chega ao sistema
+1. **Tirar agora**, pelo painel (abre a câmera).
+2. **Galeria / WhatsApp**: escolher a foto que já está no celular, inclusive a enviada no grupo.
+3. **Compartilhar direto do WhatsApp** (Android, com o app instalado): na foto, toque em Compartilhar › **The Way** e o app já abre o reconhecimento. *(No iPhone essa opção não existe para PWA; usa-se a opção 2.)*
+4. *(Futuro, com o agente)* O professor manda a foto para o **número do WhatsApp da escola** e o agente processa e responde com o resumo (“22 presenças, 2 faltas, 1 rosto desconhecido: quem é?”). A API oficial do WhatsApp trabalha com conversas diretas com o número da escola; ler fotos de **grupo** precisa ser confirmado na implementação.
+
+## Teste com a foto real da aula (13/11/2026)
+Foto enviada pelo WhatsApp: **960×1280 px**, **24 pessoas** em 3 fileiras, rostos de ~25 a 35 px.
+
+| Método | Rostos achados |
+|---|---|
+| Foto inteira de uma vez (v0.2.0) | 26, com **2 duplicados**, 1 pessoa perdida e 1 falso de baixa confiança |
+| **Foto em pedaços sobrepostos (v0.3.0)** | **24 de 24**, sem duplicados (~0,5 s) |
+
+- Fluxo testado no painel: ensinei 9 rostos (7 alunos, 1 professor, 1 visitante) e confirmei. Na 2ª leitura da mesma foto, reconheceu **os 8** (o visitante não é memorizado, de propósito). O resultado separou: 7 presenças (1 “veio sem agendar”), o professor e 3 faltas de quem agendou e não apareceu.
+- **Ainda não medido:** acerto entre **fotos diferentes** (outra aula, outra luz). Para isso é preciso que os alunos cadastrem o rosto, ou ter 2 ou 3 fotos de aulas diferentes.
+
+### Recomendações para a foto
+- Enviar em **HD** no WhatsApp (a foto normal é comprimida para 960 px e os rostos ficam pequenos). Melhor ainda: enviar pela opção de compartilhar para o app, ou pela galeria do próprio celular.
+- Todos de frente, sem boné, em 2 ou 3 fileiras (como na foto de teste, que ficou ótima).
+- Fotógrafo um pouco mais perto: a parte de cima da foto (teto) pode ficar de fora.
+
+## O que já funciona no protótipo
 - Detecção e reconhecimento **de verdade**, rodando no navegador. A biblioteca é `@vladmandic/face-api`, com TensorFlow.js.
-  Testei com uma foto de grupo: achou os 3 rostos. Depois de ensinar uma vez, reconheceu os 3.
 - Cadastro em 3 poses, com verificação de pose. Se não houver câmera, aceita enviar uma foto.
 - Aprendizado com rostos desconhecidos na foto da turma.
 - **Limitação do protótipo:** os rostos ficam salvos **no aparelho em que foram cadastrados**. Para testar o fluxo completo, cadastre e tire a foto da turma no mesmo celular. No sistema real, isso fica no banco de dados.
@@ -39,4 +71,6 @@ Biometria facial é **dado pessoal sensível** (LGPD, art. 11). Por isso:
 - Fotos da turma na galeria: avisar no cadastro e permitir que o aluno peça para não aparecer.
 
 ## Pendente
-- [ ] Wesley vai mandar uma foto real de fim de aula para avaliar: quantas pessoas, distância, luz. Com ela dá para testar a taxa de acerto e ajustar o limite de semelhança (`LIMIAR` em `prototipo/js/rosto.js`, hoje 0.5).
+- [x] Foto real de fim de aula avaliada (24/24 rostos detectados).
+- [ ] Medir acerto entre aulas diferentes. Precisa de 2 ou 3 fotos de dias diferentes, ou de alunos com rosto cadastrado. Ajustar `LIMIAR` em `prototipo/js/rosto.js` (hoje 0.5).
+- [ ] A foto de teste **não** vai para o GitHub (`prototipo/_teste/` está no `.gitignore`), porque tem rostos de pessoas reais.

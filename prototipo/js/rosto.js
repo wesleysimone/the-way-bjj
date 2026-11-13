@@ -136,80 +136,140 @@ window.Rosto = (function () {
   function apagar(nome) { const b = base(); delete b[nome]; store.set('rostos', b); }
 
   // ======================= FOTO DA TURMA (painel do professor) =======================
-  function fotoDaTurma(aoConfirmar) {
+  // A FOTO é a fonte da verdade: quem aparece ganha presença, tenha agendado ou não.
+  // Quem agendou e não aparece fica como falta (o professor pode corrigir).
+  const PROFESSOR = 'Professor';
+  const VISITANTE = 'Visitante / aula experimental';
+
+  // Detecção em "pedaços" (tiles): numa foto de turma os rostos são pequenos (~25 px).
+  // Analisar a foto inteira de uma vez perde rostos; em pedaços sobrepostos achou 24 de 24 na foto real de teste.
+  async function detectarTurma(f, canvas, aoProgredir) {
+    const W = canvas.width, H = canvas.height;
+    const T = Math.max(320, Math.min(640, Math.round(Math.min(W, H) / 2))), S = Math.round(T * 0.75);
+    const tile = document.createElement('canvas'); tile.width = T; tile.height = T;
+    const ctx = tile.getContext('2d');
+    const achados = []; let n = 0;
+    const total = Math.ceil(Math.max(1, W - T) / S + 1) * Math.ceil(Math.max(1, H - T) / S + 1);
+    for (let y = 0; ; y += S) {
+      for (let x = 0; ; x += S) {
+        const tx = Math.min(x, Math.max(0, W - T)), ty = Math.min(y, Math.max(0, H - T));
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, T, T);
+        ctx.drawImage(canvas, tx, ty, T, T, 0, 0, T, T);
+        const r = await f.detectAllFaces(tile, new f.SsdMobilenetv1Options({ minConfidence: 0.5 })).withFaceLandmarks().withFaceDescriptors();
+        r.forEach((a) => { const b = a.detection.box; achados.push({ box: { x: b.x + tx, y: b.y + ty, width: b.width, height: b.height }, score: a.detection.score, descritor: a.descriptor }); });
+        aoProgredir && aoProgredir(`Procurando rostos… ${Math.min(99, Math.round(++n / total * 100))}%`);
+        if (x + T >= W) break;
+      }
+      if (y + T >= H) break;
+    }
+    // remove o mesmo rosto achado em dois pedaços (fica o de maior confiança)
+    const sobre = (a, b) => { const x1 = Math.max(a.x, b.x), y1 = Math.max(a.y, b.y), x2 = Math.min(a.x + a.width, b.x + b.width), y2 = Math.min(a.y + a.height, b.y + b.height); const i = Math.max(0, x2 - x1) * Math.max(0, y2 - y1); return i / Math.min(a.width * a.height, b.width * b.height); };
+    achados.sort((a, b) => b.score - a.score);
+    const unicos = [];
+    achados.forEach((a) => { if (!unicos.some((u) => sobre(u.box, a.box) > 0.4)) unicos.push(a); });
+    return unicos.sort((a, b) => (Math.abs(a.box.y - b.box.y) > a.box.height ? a.box.y - b.box.y : a.box.x - b.box.x));
+  }
+
+  // cada pessoa no máximo 1 vez: pareia rosto↔pessoa pela menor distância
+  function reconhecer(f, rostos) {
+    const b = base(); const pares = [];
+    rostos.forEach((r, i) => Object.entries(b).forEach(([nome, ds]) => {
+      const d = Math.min(...ds.map((x) => f.euclideanDistance(r.descritor, x)));
+      if (d < LIMIAR) pares.push({ i, nome, d });
+    }));
+    pares.sort((a, b) => a.d - b.d);
+    const usadoR = new Set(), usadoN = new Set();
+    rostos.forEach((r, i) => { r.i = i; r.nome = null; r.conf = 0; });
+    pares.forEach((p) => { if (!usadoR.has(p.i) && !usadoN.has(p.nome)) { usadoR.add(p.i); usadoN.add(p.nome); rostos[p.i].nome = p.nome; rostos[p.i].conf = 1 - p.d; } });
+    return rostos;
+  }
+
+  /* opcoes: { agendados: [nomes], aoConfirmar(presentes, faltas, extras), arquivo } */
+  function fotoDaTurma(opcoes = {}) {
+    const { agendados = [], aoConfirmar, arquivo } = opcoes;
     modal(`
       <h3>${ic('camera')} Foto da turma → presença</h3>
-      <p class="a-muted" style="margin-top:0">Tire ou envie a foto do fim da aula. O sistema reconhece quem está nela e marca a presença.</p>
-      <label class="btn btn-primary btn-block">${ic('camera', 18)} Tirar / escolher foto<input type="file" accept="image/*" capture="environment" id="ft-file" hidden></label>
-      <div id="ft-status" class="a-muted" style="text-align:center;margin:10px 0;font-size:14px">${cadastrados().length ? `${cadastrados().length} rosto(s) cadastrado(s) neste aparelho` : 'Nenhum rosto cadastrado ainda — cadastre no App do aluno › Perfil, ou ensine aqui depois da foto.'}</div>
+      <p class="a-muted" style="margin-top:0">A foto manda: <b>quem aparece ganha presença</b>, mesmo sem ter agendado. Quem agendou e não aparece fica como falta.</p>
+      <div class="a-row" style="gap:8px">
+        <label class="btn btn-primary" style="flex:1;padding:12px 10px">${ic('camera', 18)} Tirar agora<input type="file" accept="image/*" capture="environment" class="ft-file" hidden></label>
+        <label class="btn btn-ghost" style="flex:1;padding:12px 10px">🖼️ Galeria / WhatsApp<input type="file" accept="image/*" class="ft-file" hidden></label>
+      </div>
+      <p class="a-muted" style="font-size:12px;margin:8px 0 0">Dica: no WhatsApp, envie a foto em <b>HD</b> — rostos pequenos são reconhecidos melhor. No Android, com o app instalado, dá para <b>compartilhar a foto do WhatsApp direto para o app The Way</b>.</p>
+      <div id="ft-status" class="a-muted" style="text-align:center;margin:10px 0;font-size:14px">${agendados.length} agendado(s) nesta aula · ${cadastrados().length} rosto(s) cadastrado(s)</div>
       <div id="ft-resultado"></div>
       <button class="btn btn-ghost btn-block" data-close style="margin-top:8px">Fechar</button>
     `, (m, fechar) => {
       const status = $('#ft-status', m), res = $('#ft-resultado', m);
-      $('#ft-file', m).onchange = async (e) => {
-        const arq = e.target.files[0]; if (!arq) return;
+      async function processar(arq) {
         try {
           const f = await carregar((t) => status.textContent = t);
-          status.textContent = 'Procurando rostos na foto…';
-          const canvas = await arquivoParaImagem(arq);
-          const achados = await f.detectAllFaces(canvas, new f.SsdMobilenetv1Options({ minConfidence: 0.35 })).withFaceLandmarks().withFaceDescriptors();
-          const b = base();
-          const rotulados = Object.entries(b).map(([n, ds]) => new f.LabeledFaceDescriptors(n, ds.map((d) => new Float32Array(d))));
-          const matcher = rotulados.length ? new f.FaceMatcher(rotulados, LIMIAR) : null;
-          const usados = new Set();
-          const lista = achados.map((a, i) => {
-            let nome = null, conf = 0;
-            if (matcher) { const best = matcher.findBestMatch(a.descriptor); if (best.label !== 'unknown' && !usados.has(best.label)) { nome = best.label; conf = 1 - best.distance; usados.add(nome); } }
-            return { i, box: a.detection.box, descritor: a.descriptor, nome, conf };
-          });
-          desenhar(canvas, lista);
-          status.innerHTML = `<b>${achados.length}</b> rosto(s) na foto · <b style="color:var(--ok)">${lista.filter((x) => x.nome).length}</b> reconhecido(s)`;
-          mostrar(res, canvas, lista, fechar, aoConfirmar);
+          const canvas = await arquivoParaImagem(arq, 2400);
+          const rostos = reconhecer(f, await detectarTurma(f, canvas, (t) => status.textContent = t));
+          desenhar(canvas, rostos);
+          status.innerHTML = `<b>${rostos.length}</b> rosto(s) na foto · <b style="color:var(--ok)">${rostos.filter((x) => x.nome).length}</b> reconhecido(s)`;
+          mostrar(res, canvas, rostos, agendados, fechar, aoConfirmar);
         } catch (err) { status.textContent = 'Erro: ' + err.message; }
-        e.target.value = '';
-      };
+      }
+      $$('.ft-file', m).forEach((inp) => inp.onchange = (e) => { const a = e.target.files[0]; e.target.value = ''; if (a) processar(a); });
+      if (arquivo) processar(arquivo);
     });
   }
 
   function desenhar(canvas, lista) {
-    const ctx = canvas.getContext('2d'); const lw = Math.max(3, canvas.width / 300);
+    const ctx = canvas.getContext('2d'); const lw = Math.max(2, canvas.width / 400);
     lista.forEach((x) => {
       const { x: X, y: Y, width: W, height: H } = x.box;
-      ctx.lineWidth = lw; ctx.strokeStyle = x.nome ? '#2FA36B' : '#E0A526'; ctx.strokeRect(X, Y, W, H);
-      const tag = x.nome ? x.nome.split(' ')[0] : '?' + (x.i + 1);
-      ctx.font = `bold ${Math.max(14, W / 5)}px Inter, sans-serif`;
-      const tw = ctx.measureText(tag).width + 12, th = Math.max(20, W / 4);
-      ctx.fillStyle = x.nome ? '#2FA36B' : '#E0A526'; ctx.fillRect(X, Y - th, tw, th);
-      ctx.fillStyle = '#fff'; ctx.fillText(tag, X + 6, Y - th * 0.25);
+      const cor = x.nome === PROFESSOR ? '#224B66' : x.nome ? '#2FA36B' : '#E0A526';
+      ctx.lineWidth = lw; ctx.strokeStyle = cor; ctx.strokeRect(X, Y, W, H);
+      const tag = x.nome === PROFESSOR ? 'Prof.' : x.nome ? x.nome.split(' ')[0] : String(x.i + 1);
+      const fs = Math.max(11, Math.min(W * 0.45, 22));
+      ctx.font = `bold ${fs}px Inter, sans-serif`;
+      const tw = ctx.measureText(tag).width + 8, th = fs + 6;
+      ctx.fillStyle = cor; ctx.fillRect(X, Y - th, tw, th);
+      ctx.fillStyle = '#fff'; ctx.fillText(tag, X + 4, Y - 5);
     });
   }
 
-  function mostrar(res, canvas, lista, fechar, aoConfirmar) {
-    const nomes = [DB.eu.nome, ...DB.alunos.map((a) => a.nome)];
-    canvas.style.cssText = 'width:100%;border-radius:12px;margin-bottom:10px';
+  function mostrar(res, canvas, lista, agendados, fechar, aoConfirmar) {
+    const nomesAlunos = [DB.eu.nome, ...DB.eu.dependentes.map((d) => d.nome), ...DB.alunos.map((a) => a.nome)];
+    const naFoto = new Set(lista.map((x) => x.nome).filter(Boolean));
+    const reconhecidos = lista.filter((x) => x.nome && x.nome !== PROFESSOR);
+    const professor = lista.filter((x) => x.nome === PROFESSOR);
+    const desconhecidos = lista.filter((x) => !x.nome);
+    const ausentes = agendados.filter((n) => !naFoto.has(n));
+    canvas.style.cssText = 'width:100%;display:block;cursor:zoom-in';
+    canvas.title = 'Toque para ampliar';
+    canvas.onclick = () => { canvas.style.width = canvas.style.width === '100%' ? '250%' : '100%'; };
     res.innerHTML = '';
-    res.appendChild(canvas);
+    const wrap = document.createElement('div'); wrap.style.cssText = 'overflow:auto;border-radius:12px;max-height:60vh'; wrap.appendChild(canvas); res.appendChild(wrap);
+    const av = (x) => `<div class="av" style="background:${x.nome === PROFESSOR ? 'var(--blue)' : x.nome ? 'var(--ok)' : '#E0A526'};color:#fff">${x.nome === PROFESSOR ? 'P' : x.nome ? iniciais(x.nome) : x.i + 1}</div>`;
     const box = document.createElement('div');
-    box.innerHTML = lista.length ? lista.map((x) => `
-      <div class="ft-item"><div class="av" style="background:${x.nome ? 'var(--ok)' : '#E0A526'};color:#fff">${x.nome ? iniciais(x.nome) : '?' + (x.i + 1)}</div>
-        <div style="flex:1;min-width:0">${x.nome ? `<b>${esc(x.nome)}</b><div class="a-muted" style="font-size:12px">reconhecido · ${Math.round(x.conf * 100)}% parecido</div>`
-          : `<select data-ensinar="${x.i}"><option value="">Quem é o rosto ?${x.i + 1}?</option>${nomes.map((n) => `<option>${esc(n)}</option>`).join('')}</select>`}</div>
-        ${x.nome ? `<input type="checkbox" checked data-pres="${x.i}" style="width:22px;height:22px">` : ''}</div>`).join('')
-      : '<p class="a-muted">Nenhum rosto encontrado. Tente uma foto com mais luz e rostos de frente.</p>';
+    box.innerHTML = `
+      ${reconhecidos.length ? `<div class="a-section-title">✅ Presença (${reconhecidos.length})</div>` + reconhecidos.map((x) => `<div class="ft-item">${av(x)}<div style="flex:1;min-width:0"><b>${esc(x.nome)}</b><div class="a-muted" style="font-size:12px">${agendados.includes(x.nome) ? 'agendou e veio' : '<span style="color:#9a6b00;font-weight:700">veio sem agendar</span> — presença marcada'} · ${Math.round(x.conf * 100)}% parecido</div></div><input type="checkbox" checked data-pres="${x.i}" style="width:22px;height:22px"></div>`).join('') : ''}
+      ${professor.length ? `<div class="a-section-title">👊 Professor (não conta presença)</div>` + professor.map((x) => `<div class="ft-item">${av(x)}<b>Professor</b></div>`).join('') : ''}
+      ${desconhecidos.length ? `<div class="a-section-title">❓ Quem é? (${desconhecidos.length})</div><p class="a-muted" style="font-size:12px;margin:0 0 4px">Escolha uma vez — o sistema aprende o rosto para as próximas fotos. Toque na foto para ampliar e ver os números.</p>` +
+        desconhecidos.map((x) => `<div class="ft-item">${av(x)}<div style="flex:1;min-width:0"><select data-ensinar="${x.i}"><option value="">Rosto ${x.i + 1}: não sei / pular</option><option>${PROFESSOR}</option><option>${VISITANTE}</option>${nomesAlunos.filter((n) => !naFoto.has(n)).map((n) => `<option>${esc(n)}</option>`).join('')}</select></div></div>`).join('') : ''}
+      ${ausentes.length ? `<div class="a-section-title">⚠️ Agendou e não está na foto (${ausentes.length})</div>` + ausentes.map((n) => `<div class="ft-item"><div class="av" style="background:#B42323;color:#fff">${iniciais(n)}</div><div style="flex:1"><b>${esc(n)}</b><div class="a-muted" style="font-size:12px">fica como falta · marque se ele estava (saiu da foto)</div></div><input type="checkbox" data-aus="${esc(n)}" style="width:22px;height:22px"></div>`).join('') : ''}
+      ${!lista.length ? '<p class="a-muted">Nenhum rosto encontrado. Tente uma foto com mais luz, mais perto e em HD.</p>' : ''}`;
     res.appendChild(box);
-    if (lista.length) {
-      const b = document.createElement('button'); b.className = 'btn btn-primary btn-block'; b.style.marginTop = '10px';
-      b.textContent = 'Confirmar presença'; res.appendChild(b);
-      b.onclick = () => {
-        // rostos ensinados agora: o sistema aprende para as próximas fotos
-        $$('[data-ensinar]', box).forEach((s) => { if (s.value) { const x = lista[+s.dataset.ensinar]; salvarRosto(s.value, x.descritor); x.nome = s.value; } });
-        const presentes = lista.filter((x) => x.nome && (!$(`[data-pres="${x.i}"]`, box) || $(`[data-pres="${x.i}"]`, box).checked)).map((x) => x.nome);
-        aoConfirmar && aoConfirmar(presentes);
-        fechar();
-        toast(`✅ Presença de ${presentes.length} aluno(s) registrada. Foto enviada para a galeria.`, 3500);
-      };
-    }
+    const b = document.createElement('button'); b.className = 'btn btn-primary btn-block'; b.style.marginTop = '12px';
+    b.textContent = 'Confirmar presença'; res.appendChild(b);
+    b.onclick = () => {
+      const extras = [];
+      $$('[data-ensinar]', box).forEach((s) => {
+        if (!s.value) return;
+        const x = lista[+s.dataset.ensinar];
+        if (s.value === VISITANTE) { extras.push(VISITANTE); return; } // visitante não é memorizado
+        salvarRosto(s.value, x.descritor); x.nome = s.value;             // aprende o rosto
+      });
+      const presentes = lista.filter((x) => x.nome && x.nome !== PROFESSOR && (!$(`[data-pres="${x.i}"]`, box) || $(`[data-pres="${x.i}"]`, box).checked)).map((x) => x.nome);
+      $$('[data-aus]', box).forEach((c) => { if (c.checked) presentes.push(c.dataset.aus); });
+      const faltas = agendados.filter((n) => !presentes.includes(n));
+      aoConfirmar && aoConfirmar(presentes, faltas, extras);
+      fechar();
+      toast(`✅ ${presentes.length} presença(s) · ${faltas.length} falta(s)${extras.length ? ` · ${extras.length} visitante(s)` : ''}. Foto na galeria.`, 4000);
+    };
   }
 
-  return { carregar, cadastrar, fotoDaTurma, cadastrados, apagar, base };
+  return { carregar, cadastrar, fotoDaTurma, cadastrados, apagar, base, PROFESSOR };
 })();

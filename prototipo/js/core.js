@@ -1,7 +1,7 @@
 /* Núcleo do protótipo: rotas, armazenamento, ícones, sugestões do professor,
  * agente de atendimento (simulado) e atualização automática do PWA. */
 (function () {
-  const VERSAO = '0.2.0';
+  const VERSAO = '0.3.0';
 
   // ---------- armazenamento seguro (localStorage pode falhar em aba anônima) ----------
   const store = {
@@ -369,6 +369,20 @@
     pwa();
     window.addEventListener('hashchange', render);
     render();
+    fotoCompartilhada();
+  }
+
+  // Foto que o professor compartilhou do WhatsApp para o app (ver share_target no manifest e sw.js)
+  async function fotoCompartilhada() {
+    if (new URLSearchParams(location.search).get('foto') !== 'compartilhada' || !('caches' in window)) return;
+    history.replaceState(null, '', location.pathname + location.hash);
+    try {
+      const c = await caches.open('theway-compartilhada');
+      const r = await c.match('./_foto-compartilhada');
+      if (!r) return;
+      const blob = await r.blob(); await c.delete('./_foto-compartilhada');
+      Admin.abrirFotoTurma(new File([blob], 'foto-turma.jpg', { type: blob.type || 'image/jpeg' }));
+    } catch (e) { toast('Não consegui abrir a foto compartilhada'); }
   }
 
   window.App = { start, render, store, ic, $, $$, esc, brl, dataBR, DIAS, DIAS_LONGO, unidade, faixa, iniciais, corAv, logo, toast, modal, instalar, Agente, VERSAO };

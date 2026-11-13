@@ -14,6 +14,7 @@
 |---|---|---|
 | 0 | Protótipo navegável para o professor aprovar | ✅ publicado (v0.1.0) |
 | 0.2 | Valores 150/100, “Como chegar” no Maps, sugestões com marcação na tela, reconhecimento facial | ✅ publicado (v0.2.0) |
+| 0.3 | Presença pela foto independente de agendamento (faltas, “veio sem agendar”, professor, visitante), detecção em pedaços (24/24 na foto real), foto vinda do WhatsApp/galeria, mostrar/esconder valores no site, mensagem com decisões para o professor | ✅ publicado (v0.3.0) |
 | 1 | Ajustes do protótipo com as sugestões do professor | ⏳ aguardando feedback |
 | 2 | MVP real: login, grade/agenda, check-in QR, graduação, painel, Pix com baixa manual no painel | — |
 | 3 | Pix automático (gateway + webhook) + lembretes | — |

@@ -105,7 +105,7 @@ window.Site = (function () {
       <div class="cards">${DB.planos.map((p) => `
         <div class="card plano ${p.destaque ? 'destaque' : ''}">
           <h3>${esc(p.nome)}</h3>
-          <div class="preco">${p.preco ? brl(p.preco).replace(',00', '') : 'Consulte'}<small>${p.preco ? p.periodo : ''}</small></div>
+          <div class="preco">${p.preco && App.store.get('mostrarPrecos', true) ? brl(p.preco).replace(',00', '') : 'Consulte'}<small>${p.preco && App.store.get('mostrarPrecos', true) ? p.periodo : ''}</small></div>
           <ul>${p.itens.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
           <button class="btn ${p.destaque ? 'btn-blue' : 'btn-ghost'} btn-block" data-exp>Agendar aula experimental</button>
         </div>`).join('')}</div>
