@@ -109,7 +109,7 @@ window.Rosto = (function () {
         salvarRosto(nome, r.descriptor);
         etapa++; marcarEtapas();
         if (etapa >= ETAPAS.length) {
-          fecharTudo(); toast('✅ Rosto cadastrado! Agora a foto da turma marca sua presença.', 3500); aoTerminar && aoTerminar();
+          fecharTudo(); App.registrar('acao', 'Rosto cadastrado: ' + nome); toast('✅ Rosto cadastrado! Agora a foto da turma marca sua presença.', 3500); aoTerminar && aoTerminar();
         } else status.textContent = '✓ Boa! ' + ETAPAS[etapa].dica;
       }
       btn.onclick = () => processar(video);
@@ -208,7 +208,7 @@ window.Rosto = (function () {
           desenhar(canvas, rostos);
           status.innerHTML = `<b>${rostos.length}</b> rosto(s) na foto · <b style="color:var(--ok)">${rostos.filter((x) => x.nome).length}</b> reconhecido(s)`;
           mostrar(res, canvas, rostos, agendados, fechar, aoConfirmar);
-        } catch (err) { status.textContent = 'Erro: ' + err.message; }
+        } catch (err) { status.textContent = 'Erro: ' + err.message; App.registrar('erro', 'Foto da turma: ' + err.message); }
       }
       $$('.ft-file', m).forEach((inp) => inp.onchange = (e) => { const a = e.target.files[0]; e.target.value = ''; if (a) processar(a); });
       if (arquivo) processar(arquivo);
@@ -219,7 +219,7 @@ window.Rosto = (function () {
     const ctx = canvas.getContext('2d'); const lw = Math.max(2, canvas.width / 400);
     lista.forEach((x) => {
       const { x: X, y: Y, width: W, height: H } = x.box;
-      const cor = x.nome === PROFESSOR ? '#224B66' : x.nome ? '#2FA36B' : '#E0A526';
+      const cor = x.nome === PROFESSOR ? '#214A68' : x.nome ? '#2FA36B' : '#E0A526';
       ctx.lineWidth = lw; ctx.strokeStyle = cor; ctx.strokeRect(X, Y, W, H);
       const tag = x.nome === PROFESSOR ? 'Prof.' : x.nome ? x.nome.split(' ')[0] : String(x.i + 1);
       const fs = Math.max(11, Math.min(W * 0.45, 22));
@@ -265,7 +265,12 @@ window.Rosto = (function () {
       const presentes = lista.filter((x) => x.nome && x.nome !== PROFESSOR && (!$(`[data-pres="${x.i}"]`, box) || $(`[data-pres="${x.i}"]`, box).checked)).map((x) => x.nome);
       $$('[data-aus]', box).forEach((c) => { if (c.checked) presentes.push(c.dataset.aus); });
       const faltas = agendados.filter((n) => !presentes.includes(n));
-      aoConfirmar && aoConfirmar(presentes, faltas, extras);
+      desenhar(canvas, lista.filter((x) => x.nome)); // atualiza os nomes ensinados agora na foto
+      // foto (com as marcações) reduzida para guardar no histórico
+      const esc_ = Math.min(1, 1280 / Math.max(canvas.width, canvas.height));
+      const peq = document.createElement('canvas'); peq.width = Math.round(canvas.width * esc_); peq.height = Math.round(canvas.height * esc_);
+      peq.getContext('2d').drawImage(canvas, 0, 0, peq.width, peq.height);
+      peq.toBlob((foto) => aoConfirmar && aoConfirmar(presentes, faltas, extras, { foto, rostos: lista.length, reconhecidos: lista.filter((x) => x.nome).length }), 'image/jpeg', 0.78);
       fechar();
       toast(`✅ ${presentes.length} presença(s) · ${faltas.length} falta(s)${extras.length ? ` · ${extras.length} visitante(s)` : ''}. Foto na galeria.`, 4000);
     };

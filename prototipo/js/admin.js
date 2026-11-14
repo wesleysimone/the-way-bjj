@@ -9,6 +9,7 @@ window.Admin = (function () {
 
   const MENU = [
     ['hoje', 'home', 'Hoje'],
+    ['presencas', 'camera', 'Presenças & fotos'],
     ['alunos', 'users', 'Alunos'],
     ['graduacoes', 'medal', 'Graduações', () => prontos().length],
     ['financeiro', 'wallet', 'Financeiro', () => DB.alunos.filter((a) => a.status === 'atrasado').length],
@@ -19,6 +20,34 @@ window.Admin = (function () {
 
   function beltDot(fx, grau) { const f = faixa(fx); return `<span class="belt-dot" style="background:${f.cor}"></span>${f.nome}${grau ? ` · ${grau}º` : ''}`; }
   function statusChip(s) { return { 'em-dia': '<span class="chip ok">Em dia</span>', atrasado: '<span class="chip danger">Atrasado</span>', experimental: '<span class="chip warn">Experimental</span>' }[s] || s; }
+
+  // Histórico das fotos da turma (carrega do IndexedDB depois de desenhar a tela)
+  function presencasTela() {
+    return `<h1>Presenças & fotos</h1><p class="muted">Cada foto da turma confirmada fica guardada aqui, com quem teve presença e quem faltou.</p>
+      <div class="a-row" style="gap:8px;margin:14px 0;flex-wrap:wrap"><button class="btn btn-blue btn-sm" id="nova-foto">${ic('camera', 16)} Nova foto da turma</button></div>
+      <div id="hist-presencas"><p class="muted">Carregando…</p></div>`;
+  }
+  async function carregarHistorico(root) {
+    const box = $('#hist-presencas', root); if (!box) return;
+    const l = await Galeria.listar();
+    if (!l.length) { box.innerHTML = `<div class="panel"><p class="muted" style="margin:0">Nenhuma foto ainda. Toque em “Nova foto da turma”.</p></div>`; return; }
+    box.innerHTML = l.map((r) => `<div class="panel hist-item">
+      <div class="hist-foto" data-foto="${r.id}"></div>
+      <div style="flex:1;min-width:0"><h3 style="margin-bottom:4px">${esc(r.aula || 'Aula')}</h3>
+        <div class="muted" style="font-size:13px">${new Date(r.em).toLocaleString('pt-BR')} · ${r.rostos ?? '?'} rosto(s) na foto · ${r.reconhecidos ?? '?'} reconhecido(s)</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0"><span class="chip ok">${r.presentes.length} presença(s)</span><span class="chip danger">${r.faltas.length} falta(s)</span>${r.extras && r.extras.length ? `<span class="chip warn">${r.extras.length} visitante(s)</span>` : ''}</div>
+        <details><summary class="muted" style="cursor:pointer;font-size:13px">Ver nomes</summary>
+          <p style="font-size:13px;margin:8px 0 4px"><b>Presença:</b> ${r.presentes.map(esc).join(', ') || '—'}</p>
+          <p style="font-size:13px;margin:0"><b>Faltas (agendaram e não vieram):</b> ${r.faltas.map(esc).join(', ') || '—'}</p></details>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px" data-apagar-hist="${r.id}">Apagar</button>
+      </div></div>`).join('');
+    l.forEach((r) => {
+      const el = $(`[data-foto="${r.id}"]`, box); if (!el || !r.foto) return;
+      const url = URL.createObjectURL(r.foto);
+      el.innerHTML = `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="Foto da turma"></a>`;
+    });
+    $$('[data-apagar-hist]', box).forEach((b) => b.onclick = async () => { if (!confirm('Apagar este registro e a foto?')) return; await Galeria.apagar(+b.dataset.apagarHist); carregarHistorico(root); });
+  }
 
   function hoje() {
     const d = new Date(); const dow = d.getDay() || 1;
@@ -140,7 +169,7 @@ window.Admin = (function () {
         <button class="btn btn-ghost btn-sm" style="margin-top:10px" data-edit>+ Adicionar horário</button></div>`; }).join('')}`;
   }
 
-  const TELAS = { hoje, alunos, graduacoes, financeiro, experimentais: experimentaisTela, automacoes, grade };
+  const TELAS = { hoje, presencas: presencasTela, alunos, graduacoes, financeiro, experimentais: experimentaisTela, automacoes, grade };
 
   // Alunos agendados na aula atual (no sistema real vem do banco)
   const AGENDADOS = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -148,12 +177,14 @@ window.Admin = (function () {
     const agendados = DB.alunos.filter((a) => AGENDADOS.includes(a.id)).map((a) => a.nome);
     Rosto.fotoDaTurma({
       arquivo, agendados,
-      aoConfirmar(presentes, faltas, extras) {
+      async aoConfirmar(presentes, faltas, extras, extra = {}) {
+        const dow = new Date().getDay() || 1; const g = DB.grade.filter((x) => x.dia === dow).pop() || DB.grade[0];
+        await Galeria.salvar({ aula: `${g.turma} · ${g.hora} · ${unidade(g.unidade).nome}`, presentes, faltas, extras, agendados, foto: extra.foto, rostos: extra.rostos, reconhecidos: extra.reconhecidos });
         // a foto é a fonte da verdade: presença = quem estava na foto (+ quem o professor confirmou)
         store.set('presencas', DB.alunos.filter((a) => presentes.includes(a.nome)).map((a) => a.id));
         store.set('faltas', faltas);
         if (presentes.includes(DB.eu.nome) && store.get('checkinHoje', null) !== new Date().toDateString()) { store.set('checkinHoje', new Date().toDateString()); store.set('aulasExtras', store.get('aulasExtras', 0) + 1); }
-        if (location.hash !== '#/admin/hoje') location.hash = '#/admin/hoje'; else App.render();
+        if (!location.hash.startsWith('#/admin/')) location.hash = '#/admin/presencas'; else App.render();
         if (faltas.length) setTimeout(() => toast(`🤖 Agente: mensagem “sentimos sua falta” para ${faltas.length} aluno(s) que agendaram e não vieram`, 4000), 4200);
       }
     });
@@ -169,6 +200,8 @@ window.Admin = (function () {
   }
 
   function mount(root) {
+    carregarHistorico(root);
+    const nf = $('#nova-foto', root); if (nf) nf.onclick = () => abrirFotoTurma();
     $$('[data-pres]', root).forEach((b) => b.onclick = () => {
       const id = +b.dataset.pres; let l = store.get('presencas', [1, 2, 5]);
       l = l.includes(id) ? l.filter((x) => x !== id) : [...l, id]; store.set('presencas', l); b.classList.toggle('on');

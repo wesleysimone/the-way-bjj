@@ -1,11 +1,11 @@
 /* ============ THE WAY — tokens (cores tiradas do logo) ============ */
 :root {
-  --blue: #224B66;        /* azul-petróleo do círculo do logo */
+  --blue: #214A68;        /* azul exato do logo oficial (Logo Azul.jpeg) */
   --blue-700: #183A50;
   --blue-800: #112A3A;
   --blue-300: #6F95B0;
   --blue-100: #DCE7EF;
-  --cream: #F4F0E4;       /* creme das letras */
+  --cream: #F5EFE3;       /* creme exato das letras do logo */
   --ink: #0B0F13;         /* contorno preto */
   --ink-2: #12181E;
   --ink-3: #1A222A;
@@ -420,3 +420,16 @@ body.route-app .chat-fab, body.route-app .chat { display: none; }
 
 .install-hint { background: var(--cream); color: var(--ink); border-radius: 14px; padding: 12px 14px; font-size: 14px; display: flex; gap: 10px; align-items: center; }
 .ver { font-size: 12px; color: var(--muted); }
+
+/* v0.4 — testes, histórico de sugestões e de presenças */
+.pb-testes { padding: 5px 10px; }
+@media (max-width: 560px) { .pb-testes .pb-lbl { display: none; } }
+.sug-hist { margin-top: 14px; border-top: 1px solid var(--app-line); padding-top: 10px; }
+.sug-hist summary { font-weight: 700; cursor: pointer; font-size: 14px; }
+.sug-hist-item { display: flex; gap: 6px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--app-line); font-size: 14px; }
+.sug-hist-item .btn { padding: 6px 10px; font-size: 12px; color: var(--app-text); border-color: var(--app-line); }
+.sug-list li button[data-edit] { margin-left: 0; }
+.hist-item { display: flex; gap: 16px; align-items: flex-start; }
+.hist-foto { width: 220px; flex-shrink: 0; }
+.hist-foto img { width: 100%; border-radius: 10px; }
+@media (max-width: 700px) { .hist-item { flex-direction: column; } .hist-foto { width: 100%; } }

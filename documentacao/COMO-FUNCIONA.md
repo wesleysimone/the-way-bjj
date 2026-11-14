@@ -34,7 +34,33 @@ O protótipo fica publicado no **GitHub Pages**, que é grátis:
 🧭 Ref: #/site/grade | #grade… > div.slot…   ← referência técnica para eu achar no código
 ```
 
-Também tem **“Copiar texto”** (para mandar por outro meio) e **“Limpar lista”** (para usar depois de enviar).
+### Listas de sugestões (v0.4.0)
+- As sugestões ficam numa **lista** (lista 1, lista 2…). Cada pedido é salvo na hora, e o rascunho também.
+- **💾 Salvar e continuar depois:** fecha e mantém tudo. Ao voltar, a lista e o rascunho estão lá, mesmo depois de fechar o navegador.
+- **✎ / ✕:** editar ou apagar um pedido da lista.
+- **✅ Finalizar e enviar:** abre o WhatsApp com tudo formatado, **arquiva a lista no histórico** e já abre a próxima lista para novos pedidos.
+- **📦 Listas enviadas:** **Reenviar** (se a mensagem não chegou) ou **Reabrir** (copia os pedidos para a lista atual, para ajustar e mandar de novo).
+- Toda lista enviada leva no final um **relatório técnico** curto: versão, aparelho, navegador e erros que aconteceram. Ajuda a achar falhas.
+
+## Os testes ficam salvos?
+
+**Sim, no aparelho e no navegador de quem está testando.** Fica tudo guardado mesmo fechando a página ou reiniciando o celular:
+
+| O quê | Onde fica |
+|---|---|
+| Sugestões (lista atual, rascunho e listas enviadas) | celular de quem testa |
+| Aulas experimentais agendadas pelo assistente | celular de quem testa (aparecem no Painel › Aulas experimentais) |
+| Rostos cadastrados (só a “assinatura”, não a foto) | celular de quem testa |
+| **Fotos da turma + quem teve presença/falta** | celular de quem testa (Painel › **Presenças & fotos**) |
+| Agendamentos, check-ins, pagamentos simulados | celular de quem testa |
+| Registro de testes (ações e **erros**) | celular de quem testa |
+
+**Limites do protótipo:** o que o professor testa no celular dele **não aparece** no seu, e vice-versa: não há servidor ainda. Se ele limpar os dados do navegador ou usar aba anônima, apaga. No sistema real, tudo vai para o banco de dados na nuvem.
+
+### Botão “🧪 Testes” (barra amarela)
+Mostra **o que está salvo neste aparelho** (contagem de cada item), a versão e o aparelho, e o **registro** das últimas ações e erros. Tem dois botões:
+- **Enviar relatório de teste:** manda tudo pelo WhatsApp, para eu investigar uma falha.
+- **Zerar demonstração:** apaga os dados de teste e **mantém as sugestões**.
 
 > No sistema final, as sugestões e mensagens vão direto para o banco de dados, sem passar pelo WhatsApp.
 

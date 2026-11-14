@@ -15,6 +15,7 @@
 | 0 | Protótipo navegável para o professor aprovar | ✅ publicado (v0.1.0) |
 | 0.2 | Valores 150/100, “Como chegar” no Maps, sugestões com marcação na tela, reconhecimento facial | ✅ publicado (v0.2.0) |
 | 0.3 | Presença pela foto independente de agendamento (faltas, “veio sem agendar”, professor, visitante), detecção em pedaços (24/24 na foto real), foto vinda do WhatsApp/galeria, mostrar/esconder valores no site, mensagem com decisões para o professor | ✅ publicado (v0.3.0) |
+| 0.4 | Logo oficial em alta (ícones e site com as cores exatas), listas de sugestões (salvar, finalizar e enviar, histórico), histórico de fotos da turma e presenças, painel 🧪 Testes com registro de erros | ✅ publicado (v0.4.0) |
 | 1 | Ajustes do protótipo com as sugestões do professor | ⏳ aguardando feedback |
 | 2 | MVP real: login, grade/agenda, check-in QR, graduação, painel, Pix com baixa manual no painel | — |
 | 3 | Pix automático (gateway + webhook) + lembretes | — |
@@ -34,7 +35,7 @@
 - [ ] Grade real de cada unidade (a do protótipo é exemplo)
 - [ ] Preços: confirmar regra do filho (R$ 100) e definir infantil sem responsável, matrícula, avulsa
 - [ ] Formas de pagamento além do Pix
-- [ ] Foto real de fim de aula para testar o reconhecimento facial (Wesley vai mandar)
+- [x] Foto real de fim de aula testada (24/24 rostos)
 - [ ] Consentimento LGPD para biometria (texto final) e uso de fotos de menores
 - [ ] Regras de graduação (aulas por grau em cada faixa, tempo mínimo)
 - [ ] Nomes, fotos e textos dos professores; história da escola
@@ -42,5 +43,5 @@
 - [ ] Quantos alunos tem hoje e quanto paga no BJJ Control
 - [ ] Se dá para exportar os dados do BJJ Control
 - [ ] Idade mínima no infantil
-- [ ] Logo original em alta resolução / vetor (o protótipo usa a foto do Instagram, que é pequena)
+- [x] Logo em alta resolução recebido (Logo Azul.jpeg, 1196×1600). Se houver vetor (PDF/AI/SVG), melhor ainda para impressão
 - [ ] Domínio (ex.: thewaybjj.com.br)

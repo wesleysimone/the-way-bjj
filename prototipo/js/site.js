@@ -45,7 +45,7 @@ window.Site = (function () {
           <span class="chip">${ic('medal', 14)} Equipe de competição</span>
         </div>
       </div>
-      <div class="hero-logo"><img src="${logo}" alt="THE WAY"></div>
+      <div class="hero-logo"><img src="assets/icons/logo-768.png" width="360" height="360" alt="THE WAY — Escola de Jiu-jitsu brasileiro"></div>
     </div></section>
 
     <div class="lema" aria-hidden="true"><div class="lema-track">${Array(4).fill(['Disciplina', 'Respeito', 'Superação', 'The Way', 'Oss']).flat().concat(Array(4).fill(['Disciplina', 'Respeito', 'Superação', 'The Way', 'Oss']).flat()).map((w) => `<span>${w}</span>`).join('')}</div></div>

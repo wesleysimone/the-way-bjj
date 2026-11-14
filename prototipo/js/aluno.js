@@ -226,7 +226,7 @@ window.Aluno = (function () {
       $('#copiar', m).onclick = () => { try { navigator.clipboard.writeText(codigo); } catch (e) { } toast('Código Pix copiado'); };
       $('#simpag', m).onclick = () => {
         $('#pix-status', m).innerHTML = '<span style="color:var(--ok);font-weight:800">✓ Pagamento recebido! Baixa automática feita.</span>';
-        const l = pagos(); l.push(ref); store.set('pagos', l);
+        const l = pagos(); l.push(ref); store.set('pagos', l); App.registrar('acao', 'Mensalidade paga (simulação) ' + ref);
         setTimeout(() => { fechar(); App.render(); toast('Mensalidade paga ✓ — recibo no histórico'); }, 1300);
       };
     });
