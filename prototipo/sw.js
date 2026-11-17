@@ -5,11 +5,11 @@
  * Ao publicar mudanças, aumente VERSION: o navegador detecta o sw.js novo, instala
  * na hora (skipWaiting) e a página recarrega sozinha (ver core.js).
  */
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 const CACHE = 'theway-' + VERSION;
 const CORE = [
   './', './index.html', './manifest.webmanifest',
-  './css/styles.css', './js/data.js', './js/core.js', './js/site.js', './js/aluno.js', './js/admin.js', './js/rosto.js', './js/galeria.js',
+  './css/styles.css', './css/equipe.css', './js/data.js', './js/core.js', './js/site.js', './js/aluno.js', './js/admin.js', './js/rosto.js', './js/galeria.js', './js/config.js', './js/equipe.js', './js/sugestoes.js', './js/testes.js',
   './assets/icons/logo-256.png', './assets/icons/icon-192.png'
 ];
 

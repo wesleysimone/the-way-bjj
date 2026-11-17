@@ -16,6 +16,7 @@
 | 0.2 | Valores 150/100, “Como chegar” no Maps, sugestões com marcação na tela, reconhecimento facial | ✅ publicado (v0.2.0) |
 | 0.3 | Presença pela foto independente de agendamento (faltas, “veio sem agendar”, professor, visitante), detecção em pedaços (24/24 na foto real), foto vinda do WhatsApp/galeria, mostrar/esconder valores no site, mensagem com decisões para o professor | ✅ publicado (v0.3.0) |
 | 0.4 | Logo oficial em alta (ícones e site com as cores exatas), listas de sugestões (salvar, finalizar e enviar, histórico), histórico de fotos da turma e presenças, painel 🧪 Testes com registro de erros | ✅ publicado (v0.4.0) |
+| 0.5 | Central de sugestões colaborativa (nº, solicitante, situação, apoio contra duplicidade, envio, aprovação, travas) + base compartilhada Supabase pronta (falta criar o projeto) + teste automático (28–30 casos, visual, sem alterar dados) + teste manual acompanhado com relatório | ✅ publicado (v0.5.0) |
 | 1 | Ajustes do protótipo com as sugestões do professor | ⏳ aguardando feedback |
 | 2 | MVP real: login, grade/agenda, check-in QR, graduação, painel, Pix com baixa manual no painel | — |
 | 3 | Pix automático (gateway + webhook) + lembretes | — |
@@ -28,6 +29,11 @@
 - **Supabase**: login, banco Postgres, arquivos (fotos), funções e agendador.
 - **Gateway Pix:** Asaas / Mercado Pago / Efí (comparar taxas).
 - **WhatsApp Business Platform** (oficial) + **Claude (Anthropic)** para o agente.
+
+## Pendente com o Wesley
+
+- [ ] Criar o projeto Supabase e colar as chaves (documentacao/BASE-COMPARTILHADA.md) para a lista de sugestões ficar compartilhada
+- [ ] Definir os códigos da equipe e do administrador
 
 ## A confirmar com o professor
 

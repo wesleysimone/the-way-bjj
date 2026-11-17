@@ -1,7 +1,7 @@
 /* Núcleo do protótipo: rotas, armazenamento, ícones, sugestões do professor,
  * agente de atendimento (simulado) e atualização automática do PWA. */
 (function () {
-  const VERSAO = '0.4.0';
+  const VERSAO = '0.5.0';
 
   // ---------- armazenamento seguro (localStorage pode falhar em aba anônima) ----------
   const store = {
@@ -83,7 +83,7 @@
     const modo = r.area === 'app' ? 'app' : r.area === 'admin' ? 'admin' : 'site';
     $('#protobar').innerHTML = `<div class="pb-inner">
       <span class="pb-tag">⚠ PROTÓTIPO <small>— dados fictícios, para aprovação</small></span>
-      <button class="fab-sug" id="pb-sug"></button><button class="fab-sug pb-testes" id="pb-testes" title="Dados de teste">🧪<span class="pb-lbl"> Testes</span></button>
+      <button class="fab-sug" id="pb-sug" title="Sugestões da equipe"></button><button class="fab-sug pb-testes" id="pb-testes" title="Testes">🧪<span class="pb-lbl"> Testes</span></button>
       <nav class="pb-modes" aria-label="Trocar visão">
         <a href="#/" class="${modo === 'site' ? 'on' : ''}">Site</a>
         <a href="#/app/inicio" class="${modo === 'app' ? 'on' : ''}">App do aluno</a>
@@ -109,24 +109,23 @@
     const mod = r.area === 'app' ? Aluno : r.area === 'admin' ? Admin : Site;
     mod.mount && mod.mount(root, r);
     if (r.area !== 'site' || !r.sub) window.scrollTo({ top: 0, behavior: 'instant' });
-    if (r.area === 'site' && r.sub) requestAnimationFrame(() => { const el = document.getElementById(r.sub); el && el.scrollIntoView({ behavior: 'instant', block: 'start' }); });
+    if (r.area === 'site' && r.sub) setTimeout(() => { const el = document.getElementById(r.sub); el && el.scrollIntoView({ behavior: 'instant', block: 'start' }); }, 0);
     renderFabs();
     marcarSugeridos();
+    if (window.Testes && Testes.aoMudarTela) Testes.aoMudarTela();
   }
 
-  // ---------- Sugestões do professor ----------
-  // Dois jeitos: escrever direto, ou "Marcar na tela" → toca numa parte da tela → o sistema
-  // grava o RASTRO (tela › seção › item + filtros ativos + referência técnica) e ele escreve o pedido.
-  // Tudo é salvo na hora no aparelho (inclusive o rascunho), para não perder nada se a página cair.
-  const sugestoes = () => store.get('sugestoes', []);
+  // ---------- Ferramentas da equipe de testes (barra amarela) ----------
+  // 💡 Sugestões → js/sugestoes.js (lista colaborativa)   🧪 Testes → js/testes.js (automático e manual)
   function telaAtual() {
     const r = rota();
     const nomes = { site: 'Site', app: 'App do aluno', admin: 'Painel do professor' };
-    const sec = { inicio: 'Início', agenda: 'Agenda', checkin: 'Check-in', evolucao: 'Evolução', pagamentos: 'Pagamentos', perfil: 'Perfil', hoje: 'Hoje', alunos: 'Alunos', graduacoes: 'Graduações', financeiro: 'Financeiro', experimentais: 'Aulas experimentais', automacoes: 'Agente & automações', grade: 'Grade & unidades' };
-    return nomes[r.area] + (r.sub && r.area !== 'site' ? ' › ' + (sec[r.sub] || r.sub) : '');
+    const sec = { inicio: 'Início', agenda: 'Agenda', checkin: 'Check-in', evolucao: 'Evolução', pagamentos: 'Pagamentos', perfil: 'Perfil', notificacoes: 'Avisos', hoje: 'Hoje', presencas: 'Presenças & fotos', alunos: 'Alunos', graduacoes: 'Graduações', financeiro: 'Financeiro', experimentais: 'Aulas experimentais', automacoes: 'Agente & automações', grade: 'Grade & unidades', sobre: 'A escola', unidades: 'Unidades', planos: 'Planos', regras: 'Regras', faq: 'Dúvidas', professores: 'Professores' };
+    return (nomes[r.area] || 'Site') + (r.sub ? ' › ' + (sec[r.sub] || r.sub) : '');
   }
   const limpa = (s, n = 70) => (s || '').replace(/\s+/g, ' ').trim().slice(0, n);
 
+  // "rastro" de um elemento: tela › seção › item tocado + filtros + referência técnica
   function rastroDe(el) {
     const partes = [];
     const root = $('#root');
@@ -140,40 +139,43 @@
     }
     const proprio = limpa(el.getAttribute('aria-label') || el.getAttribute('alt') || (el.innerText || el.textContent).replace(/\n+/g, ' · ')) || el.tagName.toLowerCase();
     const filtros = $$('.filter.on, .seg button.on, .day.on', root).map((b) => limpa(b.textContent, 30));
-    // referência técnica para eu (dev) achar o elemento no código
     const caminho = [];
     for (let a = el; a && a !== root && caminho.length < 14; a = a.parentElement) {
-      const cls = [...a.classList].filter((c) => c !== 'sug-alvo' && c !== 'sug-marcado').slice(0, 2).map((c) => '.' + c).join('');
+      const cls = [...a.classList].filter((c) => !['sug-alvo', 'sug-marcado', 'teste-foco'].includes(c)).slice(0, 2).map((c) => '.' + c).join('');
       const idx = a.parentElement ? [...a.parentElement.children].indexOf(a) + 1 : 1;
       caminho.unshift((a.id ? '#' + a.id : a.tagName.toLowerCase() + cls) + `:nth-child(${idx})`);
     }
-    return { onde: [...partes, `“${proprio}”`].join(' › '), filtros, seletor: caminho.join(' > '), hash: location.hash || '#/' };
+    return { onde: [telaAtual(), ...partes, `“${proprio}”`].join(' › '), filtros, seletor: caminho.join(' > '), hash: location.hash || '#/' };
   }
 
-  function marcarSugeridos() {
+  // contorno tracejado nos pontos que já têm sugestão em aberto nesta tela
+  let ultimasSug = [];
+  function marcarSugeridos(lista) {
+    if (lista) ultimasSug = lista;
     $$('.sug-marcado').forEach((e) => e.classList.remove('sug-marcado'));
-    sugestoes().forEach((s, i) => {
-      if (!s.alvo || s.alvo.hash !== (location.hash || '#/')) return;
-      try { const el = document.querySelector('#root > ' + s.alvo.seletor); if (el) { el.classList.add('sug-marcado'); el.dataset.sugN = i + 1; } } catch (e) { }
+    ultimasSug.forEach((s) => {
+      if (!s.onde || s.situacao === 'Aprovada' || s.onde.hash !== (location.hash || '#/')) return;
+      try { const el = document.querySelector('#root > ' + s.onde.seletor); if (el) el.classList.add('sug-marcado'); } catch (e) { }
     });
   }
 
   function renderFabs() {
     const fab = $('#pb-sug');
     if (fab) {
-      const n = sugestoes().length;
-      fab.innerHTML = `${ic('bulb', 16)} Sugerir ajuste ${n ? `<span class="n">${n}</span>` : ''}`;
-      fab.onclick = () => abrirSugestoes(store.get('sug-rascunho', {}).alvo || null);
-      const tb = $("#pb-testes"); if (tb) tb.onclick = abrirTestes;
+      const n = ultimasSug.filter((s) => s.situacao !== 'Aprovada').length;
+      fab.innerHTML = `${ic('bulb', 16)}<span class="pb-lbl"> Sugestões</span> ${n ? `<span class="n">${n}</span>` : ''}`;
+      fab.onclick = () => window.Sugestoes && Sugestoes.abrir();
+      const tb = $('#pb-testes'); if (tb) tb.onclick = () => window.Testes && Testes.abrir();
     }
     Agente.fab();
   }
 
-  function modoMarcar() {
+  // modo "toque na parte da tela": devolve o rastro do item tocado (ou null se cancelar)
+  function modoMarcar(aoEscolher) {
     document.body.classList.add('marcando');
     const aviso = document.createElement('div');
     aviso.className = 'marcar-aviso';
-    aviso.innerHTML = `<span>🎯 <b>Toque na parte da tela</b> que você quer mudar</span><button>Cancelar</button>`;
+    aviso.innerHTML = `<span>🎯 <b>Toque na parte da tela</b> que você quer mudar · pode trocar de tela pela barra</span><button>Cancelar</button>`;
     document.body.appendChild(aviso);
     const caixa = document.createElement('div'); caixa.className = 'marcar-caixa'; document.body.appendChild(caixa);
     const alvoDe = (t) => t.closest('#root') && (t.closest('button, a, .slot, .class-item, .kpi, tr, li, .filter, .day, img, h1, h2, h3, p, .card, .a-card, .panel, .presenca, .auto-item, .belt') || t);
@@ -187,31 +189,29 @@
       document.removeEventListener('pointermove', mover, true); document.removeEventListener('click', clicar, true); document.removeEventListener('keydown', esc_, true);
     };
     const clicar = (e) => {
-      if (aviso.contains(e.target)) { e.preventDefault(); sair(); abrirSugestoes(); return; }
+      if (aviso.contains(e.target)) { e.preventDefault(); sair(); aoEscolher(null); return; }
       const t = alvoDe(e.target); if (!t) return;
       e.preventDefault(); e.stopPropagation();
       const alvo = rastroDe(t);
       sair();
       $$('.sug-alvo').forEach((x) => x.classList.remove('sug-alvo'));
       t.classList.add('sug-alvo');
-      store.set('sug-rascunho', { ...store.get('sug-rascunho', {}), alvo });
-      abrirSugestoes(alvo);
+      aoEscolher(alvo);
     };
-    const esc_ = (e) => { if (e.key === 'Escape') { sair(); abrirSugestoes(); } };
+    const esc_ = (e) => { if (e.key === 'Escape') { sair(); aoEscolher(null); } };
     document.addEventListener('pointermove', mover, true);
     document.addEventListener('click', clicar, true);
     document.addEventListener('keydown', esc_, true);
   }
 
-  // ---------- Registro de testes (para achar falhas) ----------
-  // Guarda neste aparelho: erros do sistema + ações importantes. Vai junto, resumido, quando ele envia as sugestões.
-  function registrar(tipo, msg) {
-    const l = store.get('registro', []);
-    l.push({ em: new Date().toISOString(), tipo, msg: String(msg).slice(0, 300), tela: location.hash || '#/' });
-    store.set('registro', l.slice(-80));
+  // ---------- Registro de ações e erros (alimenta o teste manual e os relatórios) ----------
+  function registrar(tipo, msg, extra) {
+    const item = { em: new Date().toISOString(), tipo, msg: String(msg).slice(0, 400), tela: location.hash || '#/', ...(extra || {}) };
+    const l = store.get('registro', []); l.push(item); store.set('registro', l.slice(-150));
+    if (window.Testes && Testes.evento) Testes.evento(item);
   }
-  window.addEventListener('error', (e) => registrar('erro', `${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}`));
-  window.addEventListener('unhandledrejection', (e) => registrar('erro', 'Promessa: ' + ((e.reason && e.reason.message) || e.reason)));
+  window.addEventListener('error', (e) => registrar('erro', e.message || 'Erro', { arquivo: (e.filename || '').split('/').pop(), linha: e.lineno, coluna: e.colno, pilha: e.error && e.error.stack ? String(e.error.stack).slice(0, 600) : '' }));
+  window.addEventListener('unhandledrejection', (e) => registrar('erro', 'Falha em operação: ' + ((e.reason && e.reason.message) || e.reason), { pilha: e.reason && e.reason.stack ? String(e.reason.stack).slice(0, 600) : '' }));
 
   function aparelho() {
     const ua = navigator.userAgent;
@@ -219,136 +219,6 @@
     const nav = /edg\//i.test(ua) ? 'Edge' : /crios|chrome/i.test(ua) ? 'Chrome' : /safari/i.test(ua) ? 'Safari' : /firefox/i.test(ua) ? 'Firefox' : 'Navegador';
     const inst = document.body.classList.contains('standalone') ? 'app instalado' : 'navegador';
     return `v${VERSAO} · ${so} · ${nav} · tela ${innerWidth}x${innerHeight} · ${inst}`;
-  }
-  function relatorioTecnico() {
-    const erros = store.get('registro', []).filter((r) => r.tipo === 'erro');
-    return `\n—\n🛠 *Relatório técnico*: ${aparelho()} · erros: ${erros.length}` +
-      (erros.length ? '\n' + erros.slice(-5).map((e) => `• ${e.em.slice(5, 16).replace('T', ' ')} ${e.tela} — ${e.msg}`).join('\n') : '');
-  }
-
-  // ---------- Painel "🧪 Testes": o que está salvo neste aparelho + registro de falhas ----------
-  async function abrirTestes() {
-    const reg = store.get('registro', []);
-    const erros = reg.filter((r) => r.tipo === 'erro');
-    const fotos = window.Galeria ? await Galeria.contar() : 0;
-    const itens = [
-      ['💡 Sugestões na lista atual', sugestoes().length],
-      ['📦 Listas de sugestões enviadas', enviadas().length],
-      ['⭐ Aulas experimentais agendadas (teste)', store.get('experimentais', []).length],
-      ['🙂 Rostos cadastrados', window.Rosto ? Rosto.cadastrados().length : 0],
-      ['📸 Fotos da turma no histórico', fotos],
-      ['📅 Aulas agendadas no app', store.get('agendados', []).length],
-      ['💳 Mensalidades pagas (simulação)', store.get('pagos', []).length]
-    ];
-    modal(`
-      <h3>🧪 Dados de teste</h3>
-      <p class="a-muted" style="margin-top:0">Tudo o que você testa fica <b>salvo neste aparelho e neste navegador</b>, mesmo fechando a página. Não aparece em outro celular. Se limpar os dados do navegador, apaga.</p>
-      <div class="a-card" style="box-shadow:none;border:1.5px solid var(--app-line)">${itens.map(([n, v]) => `<div class="pay-row" style="padding:8px 0"><span>${n}</span><b>${v}</b></div>`).join('')}</div>
-      <div class="a-section-title">Aparelho</div><p style="font-size:13px;margin:0">${esc(aparelho())}</p>
-      <div class="a-section-title">Registro (${reg.length}) · ${erros.length ? `<span style="color:#B42323">${erros.length} erro(s)</span>` : '<span style="color:var(--ok)">nenhum erro</span>'}</div>
-      <ul class="sug-list" style="max-height:200px">${reg.slice(-20).reverse().map((r) => `<li style="${r.tipo === 'erro' ? 'background:#FFF0F0' : ''}"><div><small>${dataHora(r.em)} · ${esc(r.tela)}</small>${r.tipo === 'erro' ? '⚠️ ' : ''}${esc(r.msg)}</div></li>`).join('') || '<li>Nada registrado ainda.</li>'}</ul>
-      <button class="btn btn-ok btn-block" id="ts-env">${ic('whats', 18)} Enviar relatório de teste</button>
-      <button class="btn btn-ghost btn-block" style="margin-top:8px" id="ts-zerar">Zerar demonstração (mantém sugestões)</button>
-      <button class="btn btn-ghost btn-block" data-close style="margin-top:8px;border-color:transparent">Fechar</button>
-    `, (m, fechar) => {
-      $('#ts-env', m).onclick = () => abrirZap(`*Relatório de teste — The Way*\n${aparelho()}\n\n` + itens.map(([n, v]) => `${n}: ${v}`).join('\n') +
-        `\n\n*Registro (últimos 15)*\n` + reg.slice(-15).map((r) => `${r.tipo === 'erro' ? '⚠️' : '•'} ${dataHora(r.em)} ${r.tela} — ${r.msg}`).join('\n'));
-      $('#ts-zerar', m).onclick = async () => {
-        if (!confirm('Apagar os dados de demonstração deste aparelho (agendamentos, pagamentos, experimentais, rostos e fotos)? As sugestões continuam.')) return;
-        ['agendados', 'pagos', 'checkinHoje', 'aulasExtras', 'experimentais', 'rostos', 'presencas', 'faltas', 'registro'].forEach((k) => { try { localStorage.removeItem('tw:' + k); } catch (e) { } });
-        if (window.Galeria) await Galeria.limpar().catch(() => {});
-        fechar(); render(); toast('Demonstração zerada ✓');
-      };
-    });
-  }
-
-  // ---------- Listas de sugestões ----------
-  // "Lista atual" fica salva até ele finalizar. Ao finalizar: envia pelo WhatsApp, arquiva no histórico
-  // (dá para reenviar) e começa uma lista nova.
-  const listaInfo = () => store.get('sug-lista', { n: 1, criada: new Date().toISOString() });
-  const enviadas = () => store.get('sug-enviadas', []);
-  const dataHora = (iso) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-
-  function textoParaEnvio(lista, n) {
-    return `*Sugestões — protótipo The Way* · lista ${n} (${lista.length} pedido${lista.length > 1 ? 's' : ''})\n\n` + lista.map((x, i) =>
-      `*${i + 1}. ${x.tela}*\n` +
-      (x.alvo ? `📍 Onde: ${x.alvo.onde}\n` + (x.alvo.filtros.length ? `🔎 Filtros: ${x.alvo.filtros.join(', ')}\n` : '') : '') +
-      `✏️ Pedido: ${x.texto}\n` +
-      (x.alvo ? `🧭 Ref: ${x.alvo.hash} | ${x.alvo.seletor}\n` : `🧭 Ref: ${x.hash || ''}\n`)
-    ).join('\n') + relatorioTecnico();
-  }
-  const abrirZap = (txt) => window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank', 'noopener');
-
-  function abrirSugestoes(alvo = null) {
-    const lista = sugestoes();
-    const info = listaInfo();
-    const rasc = store.get('sug-rascunho', {});
-    const hist = enviadas();
-    modal(`
-      <h3>💡 Sugestões — lista ${info.n}</h3>
-      <p class="a-muted" style="margin-top:0">${lista.length ? `<b>${lista.length} pedido(s)</b> nesta lista · ` : ''}Tudo fica <b>salvo neste aparelho na hora</b>. Pode parar e continuar depois.</p>
-      <button class="btn btn-block marcar-btn" id="sug-marcar">🎯 Marcar na tela o que quer mudar</button>
-      ${alvo ? `<div class="rastro"><small>📍 Local marcado</small><b>${esc(alvo.onde)}</b>${alvo.filtros.length ? `<small>Filtros: ${esc(alvo.filtros.join(', '))}</small>` : ''}<button id="sug-desmarcar">trocar / tirar marcação</button></div>`
-        : `<p class="a-muted" style="font-size:13px;margin:8px 0">Ou escreva direto sobre a tela: <b>${esc(telaAtual())}</b></p>`}
-      <textarea id="sug-txt" rows="3" placeholder="${alvo ? 'O que mudar aqui? Ex.: incluir horário na terça às 7h' : 'Ex.: trocar a foto do topo, mostrar preço do infantil…'}">${esc(rasc.texto || '')}</textarea>
-      <button class="btn btn-primary btn-block" id="sug-add">+ Adicionar à lista</button>
-      ${lista.length ? `<div class="a-section-title">Lista ${info.n} — em andamento</div>
-      <ul class="sug-list">${lista.map((s, i) => `<li><div style="flex:1;min-width:0"><small>${i + 1}. ${esc(s.tela)}${s.alvo ? ' · 📍 ' + esc(s.alvo.onde) : ''}</small>${esc(s.texto)}</div><button data-edit="${i}" aria-label="Editar" style="color:var(--blue)">✎</button><button data-del="${i}" aria-label="Apagar">✕</button></li>`).join('')}</ul>
-      <div class="a-row" style="gap:8px">
-        <button class="btn btn-ghost btn-sm" style="flex:1" id="sug-salvar">💾 Salvar e continuar depois</button>
-        <button class="btn btn-ghost btn-sm" style="flex:1" id="sug-copy">Copiar texto</button>
-      </div>
-      <button class="btn btn-ok btn-block" style="margin-top:8px" id="sug-final">${ic('whats', 18)} Finalizar e enviar lista ${info.n}</button>
-      <p class="a-muted" style="font-size:12px;margin:6px 0 0;text-align:center">Ao finalizar: abre o WhatsApp com tudo formatado, a lista vai para o histórico e começa a lista ${info.n + 1}.</p>` : ''}
-      ${hist.length ? `<details class="sug-hist"><summary>📦 Listas enviadas (${hist.length})</summary>${hist.slice().reverse().map((h) => `
-        <div class="sug-hist-item"><div style="flex:1"><b>Lista ${h.n}</b> · ${h.itens.length} pedido(s)<br><small class="a-muted">enviada em ${dataHora(h.enviadaEm)}</small></div>
-        <button class="btn btn-ghost btn-sm" data-reenviar="${h.n}">Reenviar</button><button class="btn btn-ghost btn-sm" data-reabrir="${h.n}">Reabrir</button></div>`).join('')}</details>` : ''}
-      <button class="btn btn-ghost btn-block" data-close style="margin-top:8px">Fechar</button>
-    `, (m, fechar) => {
-      const txt = $('#sug-txt', m);
-      txt.oninput = () => store.set('sug-rascunho', { ...store.get('sug-rascunho', {}), texto: txt.value });
-      const reabrir = (a = null) => { fechar(); renderFabs(); marcarSugeridos(); abrirSugestoes(a); };
-      $('#sug-marcar', m).onclick = () => { fechar(); modoMarcar(); };
-      const dm = $('#sug-desmarcar', m);
-      if (dm) dm.onclick = () => { store.set('sug-rascunho', { texto: txt.value }); $$('.sug-alvo').forEach((x) => x.classList.remove('sug-alvo')); fechar(); modoMarcar(); };
-      $('#sug-add', m).onclick = () => {
-        const t = txt.value.trim();
-        if (!t) return txt.focus();
-        if (!store.get('sug-lista', null)) store.set('sug-lista', listaInfo());
-        const l = sugestoes(); l.push({ tela: telaAtual(), hash: location.hash || '#/', alvo, texto: t, em: new Date().toISOString() });
-        store.set('sugestoes', l); store.set('sug-rascunho', {});
-        registrar('acao', 'Sugestão adicionada');
-        $$('.sug-alvo').forEach((x) => x.classList.remove('sug-alvo'));
-        toast('Pedido salvo na lista ✓'); reabrir();
-      };
-      $$('[data-del]', m).forEach((b) => b.onclick = () => { if (!confirm('Apagar este pedido?')) return; const l = sugestoes(); l.splice(+b.dataset.del, 1); store.set('sugestoes', l); reabrir(alvo); });
-      $$('[data-edit]', m).forEach((b) => b.onclick = () => {
-        const l = sugestoes(); const s = l[+b.dataset.edit];
-        const novo = prompt('Editar pedido:', s.texto); if (novo == null || !novo.trim()) return;
-        s.texto = novo.trim(); store.set('sugestoes', l); reabrir(alvo);
-      });
-      const sv = $('#sug-salvar', m);
-      if (sv) sv.onclick = () => { fechar(); toast(`💾 Lista ${info.n} salva — continue quando quiser`); };
-      const c = $('#sug-copy', m);
-      if (c) c.onclick = () => { try { navigator.clipboard.writeText(textoParaEnvio(sugestoes(), info.n)); toast('Texto copiado ✓'); } catch (e) { toast('Não deu para copiar'); } };
-      const fz = $('#sug-final', m);
-      if (fz) fz.onclick = () => {
-        const l = sugestoes();
-        if (!confirm(`Finalizar a lista ${info.n} com ${l.length} pedido(s) e enviar pelo WhatsApp?`)) return;
-        abrirZap(textoParaEnvio(l, info.n));
-        const h = enviadas(); h.push({ n: info.n, criada: info.criada, enviadaEm: new Date().toISOString(), itens: l }); store.set('sug-enviadas', h);
-        store.set('sugestoes', []); store.set('sug-lista', { n: info.n + 1, criada: new Date().toISOString() });
-        registrar('acao', `Lista ${info.n} enviada (${l.length})`);
-        fechar(); renderFabs(); marcarSugeridos();
-        toast(`✅ Lista ${info.n} enviada e arquivada. A lista ${info.n + 1} já está pronta para novos pedidos.`, 4000);
-      };
-      $$('[data-reenviar]', m).forEach((b) => b.onclick = () => { const h = enviadas().find((x) => x.n === +b.dataset.reenviar); if (h) abrirZap(textoParaEnvio(h.itens, h.n)); });
-      $$('[data-reabrir]', m).forEach((b) => b.onclick = () => {
-        const h = enviadas().find((x) => x.n === +b.dataset.reabrir); if (!h) return;
-        if (!confirm(`Copiar os ${h.itens.length} pedido(s) da lista ${h.n} para a lista atual, para ajustar e reenviar?`)) return;
-        store.set('sugestoes', [...sugestoes(), ...h.itens]); reabrir();
-      });
-    });
   }
 
   // ---------- Agente de atendimento (simulação do que a IA fará no WhatsApp/Instagram/site) ----------
@@ -468,6 +338,9 @@
     window.addEventListener('hashchange', render);
     render();
     fotoCompartilhada();
+    if (window.Testes) Testes.retomar();
+    // carrega as sugestões em segundo plano (contador na barra + contorno nos pontos já sugeridos)
+    if (window.Sugestoes && window.Equipe && (!Equipe.compartilhado || Equipe.eu().codigo)) Sugestoes.carregar(true).then(() => renderFabs());
   }
 
   // Foto que o professor compartilhou do WhatsApp para o app (ver share_target no manifest e sw.js)
@@ -483,5 +356,5 @@
     } catch (e) { toast('Não consegui abrir a foto compartilhada'); }
   }
 
-  window.App = { start, render, registrar, aparelho, store, ic, $, $$, esc, brl, dataBR, DIAS, DIAS_LONGO, unidade, faixa, iniciais, corAv, logo, toast, modal, instalar, Agente, VERSAO };
+  window.App = { start, render, rota, telaAtual, rastroDe, modoMarcar, marcarSugeridos, registrar, aparelho, store, ic, $, $$, esc, brl, dataBR, DIAS, DIAS_LONGO, unidade, faixa, iniciais, corAv, logo, toast, modal, instalar, Agente, VERSAO };
 })();

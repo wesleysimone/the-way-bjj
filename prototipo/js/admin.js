@@ -205,12 +205,12 @@ window.Admin = (function () {
     $$('[data-pres]', root).forEach((b) => b.onclick = () => {
       const id = +b.dataset.pres; let l = store.get('presencas', [1, 2, 5]);
       l = l.includes(id) ? l.filter((x) => x !== id) : [...l, id]; store.set('presencas', l); b.classList.toggle('on');
-      toast(b.classList.contains('on') ? 'Presença marcada ✓' : 'Presença removida');
+      toast(b.classList.contains('on') ? 'Presença marcada ✓' : 'Presença removida'); App.registrar('acao', 'Presença manual alterada');
     });
     const f = $('#foto', root); if (f) f.onclick = () => abrirFotoTurma();
-    $$('[data-grad]', root).forEach((b) => b.onclick = () => { const a = DB.alunos.find((x) => x.id === +b.dataset.grad); a.grau = Math.min(4, a.grau + 1); a.aulas = 0; toast(`🎉 ${a.nome.split(' ')[0]} graduado! Mensagem de parabéns enviada.`); App.render(); });
+    $$('[data-grad]', root).forEach((b) => b.onclick = () => { const a = DB.alunos.find((x) => x.id === +b.dataset.grad); a.grau = Math.min(4, a.grau + 1); a.aulas = 0; toast(`🎉 ${a.nome.split(' ')[0]} graduado! Mensagem de parabéns enviada.`); App.registrar('acao', 'Graduação registrada: ' + a.nome); App.render(); });
     $$('[data-cobrar]', root).forEach((b) => b.onclick = () => toast(`Pix reenviado para ${b.dataset.cobrar.split(' ')[0]} pelo WhatsApp`));
-    const tp = $('#tg-precos', root); if (tp) tp.onclick = () => { store.set('mostrarPrecos', !store.get('mostrarPrecos', true)); App.render(); toast(store.get('mostrarPrecos', true) ? 'Valores visíveis no site' : 'Valores escondidos no site (Consulte)'); };
+    const tp = $('#tg-precos', root); if (tp) tp.onclick = () => { store.set('mostrarPrecos', !store.get('mostrarPrecos', true)); App.render(); toast(store.get('mostrarPrecos', true) ? 'Valores visíveis no site' : 'Valores escondidos no site (Consulte)'); App.registrar('acao', 'Configuração: mostrar valores no site'); };
     $$('[data-auto]', root).forEach((b) => b.onclick = () => { const v = !b.classList.contains('on'); store.set('auto:' + b.dataset.auto, v); b.classList.toggle('on', v); toast(v ? 'Automação ligada' : 'Automação desligada'); });
     $$('[data-edit]', root).forEach((b) => b.onclick = () => toast('Na versão real: editar horário (muda no site, app e agente na hora)'));
     const n = $('#novo', root); if (n) n.onclick = () => toast('Na versão real: cadastro com convite por WhatsApp para o aluno');

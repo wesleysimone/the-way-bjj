@@ -238,12 +238,12 @@ window.Aluno = (function () {
     $$('[data-un]', root).forEach((b) => b.onclick = () => { unidadeSel = b.dataset.un; App.render(); });
     $$('[data-k]', root).forEach((b) => b.onclick = () => {
       let l = agendados();
-      if (l.some((a) => a.k === b.dataset.k)) { l = l.filter((a) => a.k !== b.dataset.k); toast('Agendamento cancelado — vaga liberada'); }
-      else { l.push({ k: b.dataset.k, hora: b.dataset.hora, turma: b.dataset.turma, unidade: b.dataset.un2, diaTxt: b.dataset.diatxt }); toast('Aula agendada ✓ Lembrete 2h antes'); }
+      if (l.some((a) => a.k === b.dataset.k)) { l = l.filter((a) => a.k !== b.dataset.k); toast('Agendamento cancelado — vaga liberada'); App.registrar('acao', 'Agendamento cancelado: ' + b.dataset.turma); }
+      else { l.push({ k: b.dataset.k, hora: b.dataset.hora, turma: b.dataset.turma, unidade: b.dataset.un2, diaTxt: b.dataset.diatxt }); toast('Aula agendada ✓ Lembrete 2h antes'); App.registrar('acao', 'Aula agendada: ' + b.dataset.turma + ' ' + b.dataset.hora); }
       store.set('agendados', l); App.render();
     });
     const sim = $('#simular', root);
-    if (sim) sim.onclick = () => { sim.disabled = true; sim.textContent = 'Lendo QR…'; setTimeout(() => { store.set('checkinHoje', new Date().toDateString()); store.set('aulasExtras', store.get('aulasExtras', 0) + 1); App.render(); }, 1100); };
+    if (sim) sim.onclick = () => { sim.disabled = true; sim.textContent = 'Lendo QR…'; setTimeout(() => { store.set('checkinHoje', new Date().toDateString()); store.set('aulasExtras', store.get('aulasExtras', 0) + 1); App.registrar('acao', 'Check-in por QR (baixa de aula)'); App.render(); }, 1100); };
     $$('[data-pagar]', root).forEach((b) => b.onclick = () => pixModal(b.dataset.pagar));
     const inst = $('#btn-inst', root); if (inst) inst.onclick = App.instalar;
     $$('[data-rosto]', root).forEach((b) => b.onclick = () => Rosto.cadastrar(b.dataset.rosto, App.render));

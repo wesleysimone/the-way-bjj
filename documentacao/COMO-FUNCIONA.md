@@ -12,57 +12,21 @@ O protótipo fica publicado no **GitHub Pages**, que é grátis:
 - No topo há uma **barra amarela** que troca entre as 3 visões: **Site**, **App do aluno** e **Painel do professor**.
 - O site está marcado como `noindex`, então não aparece no Google enquanto for protótipo.
 
-### Como o professor dá ideias (botão “💡 Sugerir ajuste”)
-
-**Jeito 1: escrever direto.** Ele toca no botão, escreve e salva. O sistema anota em qual tela ele estava.
-
-**Jeito 2: marcar na tela** (o mais útil):
-1. Ele toca em **“🎯 Marcar na tela o que quer mudar”**.
-2. A tela fica em modo de seleção, com uma barra amarela no topo. Ele toca no ponto que quer mudar, por exemplo um horário da **terça na Hammer BSB**.
-3. O sistema grava o **rastro**: tela › seção › item tocado › filtros ativos. Exemplo: *Horários › Terça › “06:00 · No-Gi · Hammer BSB” (Filtros: Hammer BSB)*.
-4. Ele escreve o pedido (“incluir horário na terça às 7h”) e salva. O item fica com **contorno tracejado amarelo**, para ele ver o que já anotou.
-
-**Nada se perde:** cada sugestão e até o **rascunho** que ele está digitando ficam salvos na hora, no celular dele. Se a página fechar, é só abrir de novo.
-
-**Enviar:** “Enviar todas pelo WhatsApp” abre o WhatsApp com tudo **formatado**, para você me repassar e eu aplicar:
-
-```
-*1. Site*
-📍 Onde: Horários › Terça › “06:00 · No-Gi · Hammer BSB”
-🔎 Filtros: Hammer BSB, Todos
-✏️ Pedido: Incluir horário na terça às 7h
-🧭 Ref: #/site/grade | #grade… > div.slot…   ← referência técnica para eu achar no código
-```
-
-### Listas de sugestões (v0.4.0)
-- As sugestões ficam numa **lista** (lista 1, lista 2…). Cada pedido é salvo na hora, e o rascunho também.
-- **💾 Salvar e continuar depois:** fecha e mantém tudo. Ao voltar, a lista e o rascunho estão lá, mesmo depois de fechar o navegador.
-- **✎ / ✕:** editar ou apagar um pedido da lista.
-- **✅ Finalizar e enviar:** abre o WhatsApp com tudo formatado, **arquiva a lista no histórico** e já abre a próxima lista para novos pedidos.
-- **📦 Listas enviadas:** **Reenviar** (se a mensagem não chegou) ou **Reabrir** (copia os pedidos para a lista atual, para ajustar e mandar de novo).
-- Toda lista enviada leva no final um **relatório técnico** curto: versão, aparelho, navegador e erros que aconteceram. Ajuda a achar falhas.
+### Sugestões e testes da equipe (v0.5.0)
+Na barra amarela ficam **💡 Sugestões** (lista colaborativa: nº, quem pediu, situação, aprovação) e **🧪 Testes** (teste automático e teste manual acompanhado, com relatório).
+- Como funciona tudo, em detalhe: [SOLUCAO-TESTES-E-SUGESTOES.md](SOLUCAO-TESTES-E-SUGESTOES.md)
+- Como ligar a lista compartilhada (Supabase): [BASE-COMPARTILHADA.md](BASE-COMPARTILHADA.md)
+- Mensagem pronta para o grupo de testes: [MENSAGEM-GRUPO-TESTES.md](MENSAGEM-GRUPO-TESTES.md)
 
 ## Os testes ficam salvos?
 
-**Sim, no aparelho e no navegador de quem está testando.** Fica tudo guardado mesmo fechando a página ou reiniciando o celular:
-
 | O quê | Onde fica |
 |---|---|
-| Sugestões (lista atual, rascunho e listas enviadas) | celular de quem testa |
-| Aulas experimentais agendadas pelo assistente | celular de quem testa (aparecem no Painel › Aulas experimentais) |
-| Rostos cadastrados (só a “assinatura”, não a foto) | celular de quem testa |
-| **Fotos da turma + quem teve presença/falta** | celular de quem testa (Painel › **Presenças & fotos**) |
-| Agendamentos, check-ins, pagamentos simulados | celular de quem testa |
-| Registro de testes (ações e **erros**) | celular de quem testa |
+| **Sugestões e relatórios de teste** | **base compartilhada** (todos veem), quando o Supabase estiver ligado. Até lá, no aparelho de quem fez (aviso 🟡 “Modo local”) |
+| Aulas experimentais, agendamentos, check-ins, pagamentos simulados | aparelho de quem testa (dados de demonstração) |
+| Rostos cadastrados (só a “assinatura”) e fotos da turma | aparelho de quem testa (Painel › Presenças & fotos) |
 
-**Limites do protótipo:** o que o professor testa no celular dele **não aparece** no seu, e vice-versa: não há servidor ainda. Se ele limpar os dados do navegador ou usar aba anônima, apaga. No sistema real, tudo vai para o banco de dados na nuvem.
-
-### Botão “🧪 Testes” (barra amarela)
-Mostra **o que está salvo neste aparelho** (contagem de cada item), a versão e o aparelho, e o **registro** das últimas ações e erros. Tem dois botões:
-- **Enviar relatório de teste:** manda tudo pelo WhatsApp, para eu investigar uma falha.
-- **Zerar demonstração:** apaga os dados de teste e **mantém as sugestões**.
-
-> No sistema final, as sugestões e mensagens vão direto para o banco de dados, sem passar pelo WhatsApp.
+Os dados de demonstração podem ser zerados em **🧪 Testes › Dados de demonstração**.
 
 ### Tirar o link do ar (se quiser)
 
