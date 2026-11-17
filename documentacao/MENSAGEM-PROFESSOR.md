@@ -21,7 +21,9 @@ O que eu mais queria que você testasse:
 1. **Presença pela foto da turma**: no Painel › Hoje › "Foto da turma". Você manda a mesma foto que já tira no fim da aula e o sistema reconhece quem está nela. **Quem aparece ganha presença, mesmo sem ter agendado**, e quem agendou e não veio fica como falta. Dica: mande a foto em **HD** no WhatsApp.
 2. **Aula experimental automática**: no Site, botão "Agendar aula experimental". Um assistente agenda sozinho, sem ninguém responder o WhatsApp.
 
-💡 **Para dar ideias:** "Sugerir ajuste" (barra amarela) › "🎯 Marcar na tela" › toque no que quer mudar › escreva. Fica tudo salvo. No fim, "Enviar todas pelo WhatsApp" e me mande.
+💡 **Para dar ideias:** na barra amarela, toque em "💡 Sugestões" › "＋ Nova". Se quiser, use "🎯 Marcar na tela" e toque no que quer mudar. Escreva e toque em "Salvar sugestão". Fica tudo salvo, pode fazer várias. No fim, na aba "Lista", toque em "📤 Enviar minhas sugestões" › "Enviar e abrir o WhatsApp" e me mande.
+
+📲 Se quiser o app na tela inicial do celular: "App do aluno" › "Instalar". As atualizações chegam sozinhas.
 
 ---
 
