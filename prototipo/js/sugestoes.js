@@ -301,23 +301,35 @@ window.Sugestoes = (function () {
       catch (e) { toast('⚠️ ' + e.message, 4000); }
     };
     const ex = $('#d-excluir', p);
-    if (ex) ex.onclick = async () => { if (!confirm(`Excluir a sugestão ${num(s.id)}? (use para duplicadas)`)) return; try { await Equipe.chamar('tw_sug_excluir', { p_id: s.id }); aberto = null; await carregar(); desenhar(); toast('Excluída'); } catch (e) { toast('⚠️ ' + e.message); } };
+    if (ex) ex.onclick = async () => { if (!(await App.confirmar(`Excluir a sugestão ${num(s.id)}? (use para duplicadas)`, 'Excluir'))) return; try { await Equipe.chamar('tw_sug_excluir', { p_id: s.id }); aberto = null; await carregar(); desenhar(); toast('Excluída'); } catch (e) { toast('⚠️ ' + e.message); } };
   }
 
   async function enviar() {
     const eu = Equipe.eu(); const pend = lista.filter((s) => s.situacao === 'Pendente' && ehMinha(s));
     if (!pend.length) return;
-    if (!confirm(`Enviar ${pend.length} sugestão(ões) para o Wesley?\nElas passam para “Enviada” e não podem mais ser apagadas por você.`)) return;
-    try {
-      const q = await Equipe.chamar('tw_sug_enviar', { p_nome: eu.nome });
-      App.registrar('acao', `${q} sugestão(ões) enviadas`);
-      await carregar(); desenhar();
-      if (Equipe.compartilhado) toast(`📤 ${q} sugestão(ões) enviadas. O Wesley já vê na lista.`, 4000);
-      else {
-        toast(`📤 ${q} enviadas. Como a lista ainda não é compartilhada, abra o WhatsApp para avisar o Wesley.`, 5000);
-        window.open('https://wa.me/?text=' + encodeURIComponent(resumoTexto(pend.map((s) => s.id))), '_blank', 'noopener');
-      }
-    } catch (e) { toast('⚠️ ' + e.message, 4000); }
+    const local = !Equipe.compartilhado;
+    // confirmação do próprio app (o confirm() do navegador é bloqueado em app instalado / navegadores embutidos)
+    modal(`<h3>📤 Enviar ${pend.length} sugestão${pend.length > 1 ? 'ões' : ''}?</h3>
+      <p class="a-muted" style="margin-top:0">Elas passam para <b>“Enviada”</b>, ficam registradas com seu nome, data e hora, e o Wesley acompanha a partir daí.</p>
+      ${local ? '<p class="a-muted" style="font-size:13px">Como a lista ainda não é compartilhada, o <b>WhatsApp</b> abre com o texto pronto. É só escolher o Wesley (ou o grupo) e mandar.</p>' : ''}
+      <button class="btn btn-ok btn-block" id="env-ok">${local ? '📤 Enviar e abrir o WhatsApp' : '📤 Enviar'}</button>
+      <button class="btn btn-block" data-close style="margin-top:8px">Cancelar</button>`, (m, fechar) => {
+      $('#env-ok', m).onclick = async () => {
+        // o WhatsApp precisa abrir NO TOQUE (depois de esperar, o celular bloqueia como pop-up)
+        if (local) {
+          const ids = pend.map((s) => s.id);
+          const txt = resumoTexto(ids).replace(/· Pendente\*/g, '· Enviada*');
+          window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank', 'noopener');
+        }
+        fechar();
+        try {
+          const q = await Equipe.chamar('tw_sug_enviar', { p_nome: eu.nome });
+          App.registrar('acao', `${q} sugestão(ões) enviadas`);
+          await carregar(); desenhar();
+          toast(local ? `📤 ${q} enviada${q > 1 ? 's' : ''}. Mande a mensagem no WhatsApp que abriu.` : `📤 ${q} sugestão(ões) enviadas. O Wesley já vê na lista.`, 5000);
+        } catch (e) { toast('⚠️ ' + e.message, 4000); }
+      };
+    });
   }
 
   function resumoTexto(ids) {

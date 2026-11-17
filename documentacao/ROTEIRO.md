@@ -18,6 +18,7 @@
 | 0.4 | Logo oficial em alta (ícones e site com as cores exatas), listas de sugestões (salvar, finalizar e enviar, histórico), histórico de fotos da turma e presenças, painel 🧪 Testes com registro de erros | ✅ publicado (v0.4.0) |
 | 0.5 | Central de sugestões colaborativa (nº, solicitante, situação, apoio contra duplicidade, envio, aprovação, travas) + base compartilhada Supabase pronta (falta criar o projeto) + teste automático (28–30 casos, visual, sem alterar dados) + teste manual acompanhado com relatório | ✅ publicado (v0.5.0) |
 | 0.5.1 | Base compartilhada trocada para **MySQL + PHP** (sem mensalidade extra; roda em HostGator/Hostinger). API testada (39/39) e site ligado a ela | ✅ publicado (v0.5.1) |
+| 0.5.2 | Correções achadas na verificação: janelas da central de sugestões ficavam atrás dela (Enviar e Administrador não respondiam); confirmações agora são do próprio app (a do navegador some no app instalado); WhatsApp abre no toque; instruções de instalar no computador; teste automático do Enviar (29/29) | ✅ publicado (v0.5.2) |
 | 1 | Ajustes do protótipo com as sugestões do professor | ⏳ aguardando feedback |
 | 2 | MVP real: login, grade/agenda, check-in QR, graduação, painel, Pix com baixa manual no painel | — |
 | 3 | Pix automático (gateway + webhook) + lembretes | — |

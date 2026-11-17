@@ -46,7 +46,7 @@ window.Admin = (function () {
       const url = URL.createObjectURL(r.foto);
       el.innerHTML = `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="Foto da turma"></a>`;
     });
-    $$('[data-apagar-hist]', box).forEach((b) => b.onclick = async () => { if (!confirm('Apagar este registro e a foto?')) return; await Galeria.apagar(+b.dataset.apagarHist); carregarHistorico(root); });
+    $$('[data-apagar-hist]', box).forEach((b) => b.onclick = async () => { if (!(await App.confirmar('Apagar este registro e a foto?', 'Apagar'))) return; await Galeria.apagar(+b.dataset.apagarHist); carregarHistorico(root); });
   }
 
   function hoje() {

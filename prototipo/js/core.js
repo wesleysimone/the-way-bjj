@@ -1,7 +1,7 @@
 /* Núcleo do protótipo: rotas, armazenamento, ícones, sugestões do professor,
  * agente de atendimento (simulado) e atualização automática do PWA. */
 (function () {
-  const VERSAO = '0.5.1';
+  const VERSAO = '0.5.2';
 
   // ---------- armazenamento seguro (localStorage pode falhar em aba anônima) ----------
   const store = {
@@ -70,6 +70,21 @@
     $('#overlays').appendChild(bg);
     onMount && onMount(bg.firstElementChild, () => bg.remove());
     return bg;
+  }
+
+  // confirmação do próprio app (o confirm() do navegador some em app instalado e navegadores embutidos)
+  function confirmar(texto, ok = 'Confirmar') {
+    if (window.__twSemDialogos) return Promise.resolve(true); // durante o teste automático
+    return new Promise((res) => {
+      let respondeu = false;
+      const bg = modal(`<p style="margin-top:0;font-size:16px">${esc(texto)}</p>
+        <button class="btn btn-primary btn-block" id="cf-ok">${esc(ok)}</button>
+        <button class="btn btn-block" id="cf-nao" style="margin-top:8px">Cancelar</button>`, (m, fechar) => {
+        $('#cf-ok', m).onclick = () => { respondeu = true; fechar(); res(true); };
+        $('#cf-nao', m).onclick = () => { respondeu = true; fechar(); res(false); };
+      });
+      new MutationObserver((_, o) => { if (!bg.isConnected) { o.disconnect(); if (!respondeu) res(false); } }).observe($('#overlays'), { childList: true });
+    });
   }
 
   // ---------- rotas ----------
@@ -325,10 +340,15 @@
   }
   function instalar() {
     if (promptInstalar) { promptInstalar.prompt(); promptInstalar = null; return; }
-    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const ua = navigator.userAgent;
+    const ios = /iphone|ipad|ipod/i.test(ua);
+    const android = /android/i.test(ua);
+    const instalado = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    if (instalado) return toast('O app já está instalado e aberto 👍');
     modal(`<h3>${ic('download')} Instalar o app The Way</h3>
       ${ios ? `<p><b>No iPhone (Safari):</b></p><ol><li>Toque em <b>Compartilhar</b> (quadrado com seta ↑)</li><li>Escolha <b>“Adicionar à Tela de Início”</b></li><li>Toque em <b>Adicionar</b></li></ol>`
-        : `<p><b>No Android (Chrome):</b></p><ol><li>Toque no menu <b>⋮</b></li><li>Escolha <b>“Instalar app”</b> ou “Adicionar à tela inicial”</li></ol>`}
+        : android ? `<p><b>No Android (Chrome):</b></p><ol><li>Toque no menu <b>⋮</b></li><li>Escolha <b>“Instalar app”</b> ou “Adicionar à tela inicial”</li></ol>`
+        : `<p><b>No computador (Chrome ou Edge):</b></p><ol><li>Na barra de endereço, clique no ícone <b>Instalar</b> (monitor com seta ↓), à direita</li><li>Ou abra o menu <b>⋮</b> → <b>“Transmitir, salvar e compartilhar” → “Instalar página como app”</b> (no Edge: <b>Aplicativos → Instalar este site como um aplicativo</b>)</li></ol>`}
       <p class="a-muted">O ícone da The Way aparece junto com os outros apps. Toda atualização chega sozinha — não precisa reinstalar.</p>
       <button class="btn btn-primary btn-block" data-close>Entendi</button>`);
   }
@@ -356,5 +376,5 @@
     } catch (e) { toast('Não consegui abrir a foto compartilhada'); }
   }
 
-  window.App = { start, render, rota, telaAtual, rastroDe, modoMarcar, marcarSugeridos, registrar, aparelho, store, ic, $, $$, esc, brl, dataBR, DIAS, DIAS_LONGO, unidade, faixa, iniciais, corAv, logo, toast, modal, instalar, Agente, VERSAO };
+  window.App = { start, render, rota, telaAtual, rastroDe, modoMarcar, marcarSugeridos, registrar, aparelho, store, ic, $, $$, esc, brl, dataBR, DIAS, DIAS_LONGO, unidade, faixa, iniciais, corAv, logo, toast, modal, confirmar, instalar, Agente, VERSAO };
 })();

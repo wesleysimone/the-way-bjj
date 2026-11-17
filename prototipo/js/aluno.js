@@ -247,7 +247,7 @@ window.Aluno = (function () {
     $$('[data-pagar]', root).forEach((b) => b.onclick = () => pixModal(b.dataset.pagar));
     const inst = $('#btn-inst', root); if (inst) inst.onclick = App.instalar;
     $$('[data-rosto]', root).forEach((b) => b.onclick = () => Rosto.cadastrar(b.dataset.rosto, App.render));
-    $$('[data-rosto-del]', root).forEach((b) => b.onclick = () => { if (confirm('Apagar o cadastro do rosto?')) { Rosto.apagar(b.dataset.rostoDel); App.render(); toast('Cadastro do rosto apagado'); } });
+    $$('[data-rosto-del]', root).forEach((b) => b.onclick = async () => { if (await App.confirmar('Apagar o cadastro do rosto?', 'Apagar')) { Rosto.apagar(b.dataset.rostoDel); App.render(); toast('Cadastro do rosto apagado'); } });
     $$('[data-notif]', root).forEach((b) => b.onclick = () => { const k = 'notif' + b.dataset.notif; const v = !b.classList.contains('on'); store.set(k, v); b.classList.toggle('on', v); });
     const rs = $('#reset', root); if (rs) rs.onclick = () => { ['agendados', 'pagos', 'checkinHoje', 'aulasExtras'].forEach((k) => store.set(k, k === 'aulasExtras' ? 0 : k === 'checkinHoje' ? null : [])); toast('Demonstração zerada'); location.hash = '#/app/inicio'; };
   }

@@ -57,7 +57,7 @@ window.Testes = (function () {
       const mn = $('#t-manual', m); if (mn) mn.onclick = () => { fechar(); iniciarManual(); };
       const fi = $('#t-fim', m); if (fi) fi.onclick = () => { fechar(); finalizarManual(); };
       $('#t-zerar', m).onclick = async () => {
-        if (!confirm('Apagar os dados de demonstração deste aparelho (agendamentos, pagamentos simulados, experimentais, rostos e fotos)?')) return;
+        if (!(await App.confirmar('Apagar os dados de demonstração deste aparelho (agendamentos, pagamentos simulados, experimentais, rostos e fotos)?', 'Apagar'))) return;
         ['agendados', 'pagos', 'checkinHoje', 'aulasExtras', 'experimentais', 'rostos', 'presencas', 'faltas', 'mostrarPrecos'].forEach((k) => { try { localStorage.removeItem('tw:' + k); } catch (e) { } });
         if (window.Galeria) await Galeria.limpar().catch(() => {});
         fechar(); App.render(); toast('Demonstração zerada ✓');
@@ -235,6 +235,15 @@ window.Testes = (function () {
       await Sugestoes.abrir('lista'); await h.ver('#central-sug .central-abas', 'abas da central');
       for (const a of ['nova', 'aprovar', 'aprovadas', 'lista']) await h.clicar(`#central-sug [data-aba="${a}"]`, a);
       Sugestoes.fechar(); } },
+    { modulo: 'Sugestões', nome: 'Salvar e enviar uma sugestão', async fn(h) {
+      if (Equipe.compartilhado) { h.passo('Pulado na lista compartilhada (não grava sugestão de teste no banco real)'); return; }
+      const nome = Equipe.eu().nome;
+      const s = await Equipe.chamar('tw_sug_criar', { p_solicitante: nome, p_descricao: '[teste automático] sugestão de exemplo', p_area: 'Geral' });
+      await Sugestoes.abrir('lista'); await h.ver('#c-enviar:not([disabled])', 'botão Enviar liberado');
+      await h.clicar('#c-enviar', 'Enviar minhas sugestões');
+      await h.clicar('#env-ok', 'confirmar o envio');
+      await h.esperarQue(async () => { const l = await Equipe.chamar('tw_sug_listar'); const x = l.find((y) => y.id === s.id); return x && x.situacao === 'Enviada' && x.enviada_por === nome; }, 'a sugestão ficou “Enviada” com nome e hora');
+      Sugestoes.fechar(); } },
     { modulo: 'Aplicativo', nome: 'App instalável: manifesto e ícones', async fn(h) {
       h.passo('Lendo o manifesto do app'); const man = await (await fetch('manifest.webmanifest', { cache: 'no-store' })).json();
       h.ok(man.icons && man.icons.length >= 2 && man.start_url, 'Esperava manifesto com ícones e página inicial');
@@ -268,7 +277,7 @@ window.Testes = (function () {
     const copia = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('tw:')) copia[k] = localStorage.getItem(k); }
     const alunos = JSON.parse(JSON.stringify(DB.alunos));
     const orig = { open: window.open, confirm: window.confirm, prompt: window.prompt, alert: window.alert, hash: location.hash };
-    window.open = () => null; window.confirm = () => true; window.prompt = () => null; window.alert = () => {};
+    window.open = () => null; window.confirm = () => true; window.__twSemDialogos = true; window.prompt = () => null; window.alert = () => {};
     let erroAtual = null; const pegaErro = (e) => { erroAtual = (e && (e.message || (e.reason && e.reason.message))) || 'Erro'; };
     window.addEventListener('error', pegaErro); window.addEventListener('unhandledrejection', pegaErro);
     document.body.classList.add('testando');
@@ -298,7 +307,7 @@ window.Testes = (function () {
     Object.keys(localStorage).filter((k) => k.startsWith('tw:') && !(k in copia) && !k.startsWith('tw:registro')).forEach((k) => localStorage.removeItem(k));
     Object.entries(copia).forEach(([k, v]) => { if (k !== 'tw:registro') localStorage.setItem(k, v); });
     DB.alunos.splice(0, DB.alunos.length, ...alunos);
-    Object.assign(window, { open: orig.open, confirm: orig.confirm, prompt: orig.prompt, alert: orig.alert });
+    Object.assign(window, { open: orig.open, confirm: orig.confirm, prompt: orig.prompt, alert: orig.alert }); window.__twSemDialogos = false;
     document.body.classList.remove('testando');
     try { App.Agente.toggle(false); } catch (e) { }
     $$('.modal-bg').forEach((m) => m.remove()); Sugestoes.fechar();
@@ -486,7 +495,7 @@ window.Testes = (function () {
       if (sg) sg.onclick = async () => {
         const itens = r.tipo === 'automatico' ? r.casos.filter((c) => c.status === 'falha').map((c) => ({ area: c.modulo, d: `[Teste automático] Falhou: ${c.nome} — ${c.erro}`, tela: c.tela || '' }))
           : [...r.erros.map((e) => ({ area: 'Geral', d: `[Erro no teste] ${e.descricao}`, tela: e.tela, obs: e.tecnico })), ...r.problemas.map((p) => ({ area: 'Geral', d: p.descricao, tela: p.tela, obs: p.onde ? 'Onde: ' + p.onde : '' }))];
-        if (!confirm(`Criar ${itens.length} sugestão(ões) na lista da equipe a partir deste relatório?`)) return;
+        if (!(await App.confirmar(`Criar ${itens.length} sugestão(ões) na lista da equipe a partir deste relatório?`, 'Criar'))) return;
         let n = 0; for (const i of itens) { try { await Equipe.chamar('tw_sug_criar', { p_solicitante: r.responsavel, p_descricao: i.d.slice(0, 2900), p_area: i.area, p_tela: i.tela, p_onde: null, p_observacoes: (i.obs || '').slice(0, 2900), p_afeta: null }); n++; } catch (e) { } }
         toast(`💡 ${n} sugestão(ões) criadas`); fechar(); Sugestoes.abrir('lista');
       };
