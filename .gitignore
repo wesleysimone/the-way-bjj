@@ -11,3 +11,7 @@ Thumbs.db
 
 # Fotos reais usadas só em teste local
 prototipo/_teste/
+
+# banco local de teste da API
+servidor/config.php
+servidor/dados-local.db

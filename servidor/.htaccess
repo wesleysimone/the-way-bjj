@@ -1,0 +1,5 @@
+# Protege a configuração (senha do banco) na hospedagem Apache (HostGator, Hostinger…)
+<FilesMatch "^(config\.php|config\.exemplo\.php|.*\.sql|.*\.md|.*\.js)$">
+  Require all denied
+</FilesMatch>
+Options -Indexes

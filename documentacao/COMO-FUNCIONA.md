@@ -15,14 +15,14 @@ O protótipo fica publicado no **GitHub Pages**, que é grátis:
 ### Sugestões e testes da equipe (v0.5.0)
 Na barra amarela ficam **💡 Sugestões** (lista colaborativa: nº, quem pediu, situação, aprovação) e **🧪 Testes** (teste automático e teste manual acompanhado, com relatório).
 - Como funciona tudo, em detalhe: [SOLUCAO-TESTES-E-SUGESTOES.md](SOLUCAO-TESTES-E-SUGESTOES.md)
-- Como ligar a lista compartilhada (Supabase): [BASE-COMPARTILHADA.md](BASE-COMPARTILHADA.md)
+- Como ligar a lista compartilhada (MySQL + PHP): [BASE-MYSQL.md](BASE-MYSQL.md)
 - Mensagem pronta para o grupo de testes: [MENSAGEM-GRUPO-TESTES.md](MENSAGEM-GRUPO-TESTES.md)
 
 ## Os testes ficam salvos?
 
 | O quê | Onde fica |
 |---|---|
-| **Sugestões e relatórios de teste** | **base compartilhada** (todos veem), quando o Supabase estiver ligado. Até lá, no aparelho de quem fez (aviso 🟡 “Modo local”) |
+| **Sugestões e relatórios de teste** | **base compartilhada** (todos veem), quando a API MySQL estiver no ar (hospedagem). Até lá, no aparelho de quem fez (aviso 🟡 “Modo local”) |
 | Aulas experimentais, agendamentos, check-ins, pagamentos simulados | aparelho de quem testa (dados de demonstração) |
 | Rostos cadastrados (só a “assinatura”) e fotos da turma | aparelho de quem testa (Painel › Presenças & fotos) |
 

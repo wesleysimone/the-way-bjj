@@ -1,7 +1,7 @@
 /* Núcleo do protótipo: rotas, armazenamento, ícones, sugestões do professor,
  * agente de atendimento (simulado) e atualização automática do PWA. */
 (function () {
-  const VERSAO = '0.5.0';
+  const VERSAO = '0.5.1';
 
   // ---------- armazenamento seguro (localStorage pode falhar em aba anônima) ----------
   const store = {

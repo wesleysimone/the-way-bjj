@@ -1,10 +1,16 @@
-/* Configuração da base compartilhada (Supabase).
- * Enquanto estiver vazio, sugestões e relatórios funcionam em MODO LOCAL (só neste aparelho).
- * Para ligar o modo compartilhado (todos veem as mesmas sugestões), siga documentacao/BASE-COMPARTILHADA.md
- * e cole aqui a URL do projeto e a chave "anon public" (essa chave é pública por natureza;
- * a segurança vem do código da equipe exigido pelas funções do banco).
+/* Configuração da base compartilhada das sugestões e relatórios de teste.
+ *
+ * Enquanto estiver vazio, funciona em MODO LOCAL (cada aparelho guarda só o seu).
+ *
+ * Opção escolhida (sem mensalidade extra): API própria em PHP + MySQL — pasta servidor/
+ *   • no seu computador:  apiUrl: 'http://localhost:8080/api.php'
+ *   • na hospedagem:      apiUrl: 'https://seudominio.com.br/api/api.php'
+ *   Passo a passo: documentacao/BASE-MYSQL.md
+ *
+ * (Alternativa antiga, não usada: Supabase — documentacao/BASE-COMPARTILHADA.md)
  */
 window.THEWAY_CONFIG = {
-  supabaseUrl: '',        // ex.: 'https://abcdefgh.supabase.co'
-  supabaseAnonKey: ''     // ex.: 'eyJhbGciOi...'
+  apiUrl: '',             // ex.: 'https://seudominio.com.br/api/api.php'
+  supabaseUrl: '',
+  supabaseAnonKey: ''
 };

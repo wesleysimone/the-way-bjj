@@ -7,7 +7,10 @@
 window.Equipe = (function () {
   const { store, esc, modal, toast, $ } = App;
   const CFG = window.THEWAY_CONFIG || {};
-  const compartilhado = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
+  // prioridade: API própria (PHP + MySQL, sem mensalidade) → Supabase → local
+  const viaApi = !!CFG.apiUrl;
+  const viaSupabase = !viaApi && !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
+  const compartilhado = viaApi || viaSupabase;
   const ADMIN_LOCAL = 'wesley'; // só vale no modo local (demonstração)
 
   // ---------- identidade ----------
@@ -77,6 +80,7 @@ window.Equipe = (function () {
   // ---------- acesso à base ----------
   async function rpc(nome, params) {
     if (!compartilhado) return Local.chamar(nome, params);
+    if (viaApi) return api(nome, params);
     let resp;
     try {
       resp = await fetch(`${CFG.supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/${nome}`, {
@@ -89,6 +93,20 @@ window.Equipe = (function () {
     const dados = txt ? JSON.parse(txt) : null;
     if (!resp.ok) throw new Error((dados && (dados.message || dados.hint)) || 'Erro ' + resp.status);
     return dados;
+  }
+  // API própria: servidor/api.php (MySQL)
+  async function api(nome, params) {
+    let resp;
+    try {
+      resp = await fetch(CFG.apiUrl, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fn: nome, params }), cache: 'no-store'
+      });
+    } catch (e) { throw new Error('Sem conexão com a base. Verifique a internet.'); }
+    let r = null;
+    try { r = await resp.json(); } catch (e) { throw new Error('A base respondeu de um jeito inesperado (erro ' + resp.status + ')'); }
+    if (!r || !r.ok) throw new Error((r && r.erro) || 'Erro ' + resp.status);
+    return r.dados;
   }
   // atalho que já coloca o código de quem está usando
   const chamar = (nome, params = {}) => rpc(nome, { p_codigo: eu().codigo || 'local', ...params });

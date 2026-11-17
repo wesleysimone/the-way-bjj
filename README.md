@@ -10,7 +10,8 @@ Objetivo: substituir o app genérico (BJJ Control) por um sistema próprio, com 
 | `prototipo/` | Protótipo navegável (HTML/CSS/JS puro). É o que vai no link para o professor aprovar. |
 | `documentacao/` | Como funciona o link, o PWA, o GitHub, o agente e o roteiro do projeto. |
 | `Fotos app/` | Prints do app atual (BJJ Control) — **não vai para o GitHub** (tem dados de alunos). |
-| `supabase/` | Banco compartilhado das sugestões e relatórios de teste (`schema.sql`) e o teste automático do banco. |
+| `servidor/` | **API em PHP + MySQL** das sugestões e relatórios de teste (vai para a HostGator/Hostinger). `npm run local` roda tudo no PC; `npm run testar-api` testa. |
+| `supabase/` | Alternativa antiga (não usada): mesmo banco em Postgres/Supabase. |
 | `.github/workflows/` | Publicação automática do protótipo no GitHub Pages a cada `git push`. |
 
 ## Links
@@ -34,5 +35,5 @@ Abrir http://localhost:5173
 - [Reconhecimento facial (presença pela foto da turma)](documentacao/RECONHECIMENTO-FACIAL.md)
 - [Mensagem pronta para o professor](documentacao/MENSAGEM-PROFESSOR.md)
 - [Ferramentas de testes e sugestões — solução técnica](documentacao/SOLUCAO-TESTES-E-SUGESTOES.md)
-- [Ligar a base compartilhada (Supabase)](documentacao/BASE-COMPARTILHADA.md)
+- [Base compartilhada com MySQL + PHP (sem mensalidade)](documentacao/BASE-MYSQL.md)
 - [Mensagem para o grupo de testes](documentacao/MENSAGEM-GRUPO-TESTES.md)

@@ -17,6 +17,7 @@
 | 0.3 | Presença pela foto independente de agendamento (faltas, “veio sem agendar”, professor, visitante), detecção em pedaços (24/24 na foto real), foto vinda do WhatsApp/galeria, mostrar/esconder valores no site, mensagem com decisões para o professor | ✅ publicado (v0.3.0) |
 | 0.4 | Logo oficial em alta (ícones e site com as cores exatas), listas de sugestões (salvar, finalizar e enviar, histórico), histórico de fotos da turma e presenças, painel 🧪 Testes com registro de erros | ✅ publicado (v0.4.0) |
 | 0.5 | Central de sugestões colaborativa (nº, solicitante, situação, apoio contra duplicidade, envio, aprovação, travas) + base compartilhada Supabase pronta (falta criar o projeto) + teste automático (28–30 casos, visual, sem alterar dados) + teste manual acompanhado com relatório | ✅ publicado (v0.5.0) |
+| 0.5.1 | Base compartilhada trocada para **MySQL + PHP** (sem mensalidade extra; roda em HostGator/Hostinger). API testada (39/39) e site ligado a ela | ✅ publicado (v0.5.1) |
 | 1 | Ajustes do protótipo com as sugestões do professor | ⏳ aguardando feedback |
 | 2 | MVP real: login, grade/agenda, check-in QR, graduação, painel, Pix com baixa manual no painel | — |
 | 3 | Pix automático (gateway + webhook) + lembretes | — |
@@ -26,13 +27,13 @@
 ## Stack sugerida para o sistema real
 
 - **Next.js** (site + PWA) hospedado na Vercel (plano pago para uso comercial) ou na Cloudflare.
-- **Supabase**: login, banco Postgres, arquivos (fotos), funções e agendador.
+- **Hospedagem com PHP + MySQL** (HostGator ou Hostinger): site, API em PHP e banco MySQL, sem mensalidade extra além do plano. Decisão do Wesley de 17/11/2026: nada de Supabase.
 - **Gateway Pix:** Asaas / Mercado Pago / Efí (comparar taxas).
 - **WhatsApp Business Platform** (oficial) + **Claude (Anthropic)** para o agente.
 
 ## Pendente com o Wesley
 
-- [ ] Criar o projeto Supabase e colar as chaves (documentacao/BASE-COMPARTILHADA.md) para a lista de sugestões ficar compartilhada
+- [ ] Contratar a hospedagem (HostGator ou Hostinger), criar o banco MySQL e subir a pasta `servidor/` (documentacao/BASE-MYSQL.md) para a lista de sugestões ficar compartilhada
 - [ ] Definir os códigos da equipe e do administrador
 
 ## A confirmar com o professor

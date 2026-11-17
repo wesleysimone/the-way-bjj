@@ -1,6 +1,6 @@
 # Mensagem para o grupo de testes
 
-Copie e cole no grupo do WhatsApp. Quando a base compartilhada estiver ligada, use o link **com o código da equipe** (ver [BASE-COMPARTILHADA.md](BASE-COMPARTILHADA.md)).
+Copie e cole no grupo do WhatsApp. Quando a base compartilhada estiver ligada, use o link **com o código da equipe** (ver [BASE-MYSQL.md](BASE-MYSQL.md)). Até lá, deixe o link sem o `?equipe=...`: cada um guarda as suas sugestões e manda pelo *📤 Enviar*.
 
 ---
 

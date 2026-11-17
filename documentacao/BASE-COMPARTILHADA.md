@@ -1,5 +1,7 @@
 # Ligar a base compartilhada (Supabase) — passo a passo para o Wesley
 
+> ⚠️ **Não usado.** Em 17/11/2026 o Wesley decidiu usar **MySQL + PHP** para não ter despesa. Siga [BASE-MYSQL.md](BASE-MYSQL.md). Este guia fica só como alternativa.
+
 Leva uns 10 minutos. Depois disso, todos do grupo veem e editam **a mesma lista de sugestões** e **os mesmos relatórios de teste**.
 
 ## 1. Criar o projeto (grátis)

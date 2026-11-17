@@ -5,7 +5,7 @@
  * Ao publicar mudanças, aumente VERSION: o navegador detecta o sw.js novo, instala
  * na hora (skipWaiting) e a página recarrega sozinha (ver core.js).
  */
-const VERSION = '0.5.0';
+const VERSION = '0.5.1';
 const CACHE = 'theway-' + VERSION;
 const CORE = [
   './', './index.html', './manifest.webmanifest',

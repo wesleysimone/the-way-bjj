@@ -1,0 +1,14 @@
+{
+  "name": "the-way-bjj",
+  "private": true,
+  "description": "THE WAY - site, app (PWA) e painel do professor",
+  "type": "module",
+  "scripts": {
+    "local": "node servidor/rodar-local.mjs",
+    "testar-api": "node servidor/testar-api.mjs"
+  },
+  "devDependencies": {
+    "@php-wasm/node": "3.1.65",
+    "@php-wasm/universal": "3.1.65"
+  }
+}

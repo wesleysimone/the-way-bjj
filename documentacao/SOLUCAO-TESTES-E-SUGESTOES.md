@@ -1,5 +1,7 @@
 # Ferramentas de testes e sugestões: solução técnica (v0.5.0)
 
+> **Atualização 17/11/2026 (v0.5.1):** a base compartilhada passou a ser **MySQL + API em PHP** (pasta `servidor/`), sem mensalidade extra e pronta para a HostGator/Hostinger. Veja [BASE-MYSQL.md](BASE-MYSQL.md). O que está abaixo sobre o Supabase ficou só como alternativa.
+
 Resposta aos itens 1 a 7 da solicitação de melhorias. Resumo: **funciona já em modo local**. O **modo compartilhado** (todos veem a mesma lista) liga quando o Wesley criar a base no Supabase, em cerca de 10 minutos ([BASE-COMPARTILHADA.md](BASE-COMPARTILHADA.md)).
 
 ## 1. Análise da estrutura atual
